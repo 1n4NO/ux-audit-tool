@@ -19,10 +19,25 @@ export async function POST(req: NextRequest) {
     const result = await runAudit($);
 
     return NextResponse.json(result);
-  } catch (error) {
+  } catch (error: any) {
+    console.error("AUDIT ERROR:", error.message);
+
+    if (error.response?.status === 403) {
+        return NextResponse.json(
+        {
+            error: "This website blocks automated access",
+            suggestion: "Try another public website (e.g. blogs, docs, etc.)",
+        },
+        { status: 403 }
+        );
+    }
+
     return NextResponse.json(
-      { error: "Failed to audit website" },
-      { status: 500 }
+        {
+        error: "Failed to audit website",
+        details: error.message,
+        },
+        { status: 500 }
     );
-  }
+    }
 }

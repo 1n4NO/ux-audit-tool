@@ -10,7 +10,7 @@ export default function Home() {
   const handleAudit = async () => {
     setLoading(true);
 
-    const res = await fetch("/api/audit", {
+    const res = await fetch("./api/audit", {
       method: "POST",
       body: JSON.stringify({ url }),
     });
@@ -19,6 +19,8 @@ export default function Home() {
     setResult(data);
     setLoading(false);
   };
+
+  console.log("result", result);
 
   return (
     <div className="p-10 max-w-xl mx-auto">
@@ -46,7 +48,7 @@ export default function Home() {
           </h2>
 
           <ul className="mt-4 space-y-2">
-            {result.issues.map((issue: any) => (
+            {result?.issues?.map((issue: any) => (
               <li key={issue.id} className="border p-2">
                 <strong>{issue.message}</strong>
                 <p className="text-sm">{issue.suggestion}</p>
