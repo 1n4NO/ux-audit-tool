@@ -1,11 +1,15 @@
 import { CheerioAPI } from "cheerio";
-import { checkImagesAlt } from "./accessibility";
+import { checkButtons, checkImagesAlt, checkInputs } from "./accessibility";
 import { checkParagraphLength } from "./typography";
 import { AuditResult } from "@/app/types/audit";
+
+// TODO: Add Insights
 
 export async function runAudit($: CheerioAPI): Promise<AuditResult> {
   const issues = [
     ...checkImagesAlt($),
+	...checkButtons($),
+	...checkInputs($),
     ...checkParagraphLength($),
   ];
 
