@@ -1,4 +1,8 @@
-# 🚀 UX Audit Engine  
+<p align="center">
+  <img src="https://raw.githubusercontent.com/1n4NO/ux-audit-tool/main/banner.png" />
+</p>
+
+# 🚀 UX Audit Engine
 ### Automated UX & Accessibility Analysis for Modern Websites
 
 > Analyze any website in seconds. Detect UX issues, accessibility gaps, and usability flaws — with actionable insights.
