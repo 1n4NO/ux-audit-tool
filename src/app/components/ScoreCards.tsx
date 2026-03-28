@@ -13,7 +13,7 @@ export default function ScoreCards({ result }: any) {
 
 function Card({ title, value }: any) {
   return (
-    <div className="bg-white shadow rounded-xl p-4 text-center">
+    <div className="bg-white dark:bg-gray-800 shadow rounded-xl p-4 text-center">
       <p className="text-sm text-gray-500">{title}</p>
       <p className="text-2xl font-bold">{value}</p>
     </div>

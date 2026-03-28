@@ -4,7 +4,7 @@ export default function IssuesList({ issues }: any) {
       {issues.map((issue: any) => (
         <div
           key={issue.id}
-          className="border rounded-xl p-4 bg-white shadow-sm"
+          className="border rounded-xl p-4 bg-white dark:bg-gray-800 shadow-sm"
         >
           <div className="flex justify-between items-center mb-2">
             <span className="font-semibold">{issue.message}</span>

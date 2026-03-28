@@ -17,16 +17,27 @@ export default function History() {
     <div className="mt-10">
       <h3 className="text-xl font-semibold mb-4">Recent Audits</h3>
 
-      <div className="space-y-3">
-        {reports.map((r) => (
-          <div key={r.id} className="p-3 border rounded-lg bg-white">
-            <p className="font-medium">{r.url}</p>
-            <p className="text-sm text-gray-500">
-              Score: {r.result.score}
-            </p>
-          </div>
-        ))}
-      </div>
+    	<div className="space-y-3">
+			{reports.map((r) => (
+			<div key={r.id} className="p-3 border rounded-lg bg-white dark:bg-gray-800">
+				<p className="font-medium">{r.url}</p>
+				<p className="text-sm text-gray-500">
+				Score: {r.result.score}
+				</p>
+			</div>
+			))}
+    	</div>
+
+		<button
+			onClick={() => {
+				localStorage.removeItem("reports");
+				setReports([]);
+			}}
+			className="text-sm text-red-500 mb-4"
+			>
+			Clear History
+		</button>
+
     </div>
   );
 }

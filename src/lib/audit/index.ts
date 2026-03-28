@@ -1,37 +1,31 @@
-import { CheerioAPI } from "cheerio";
-import { checkButtons, checkImagesAlt, checkInputs } from "./accessibility";
+import { checkImagesAlt, checkButtons, checkInputs } from "./accessibility";
 import { checkParagraphLength } from "./typography";
-import { AuditResult } from "@/app/types/audit";
 
-// TODO: Add Insights
-
-export async function runAudit($: CheerioAPI): Promise<AuditResult> {
+export async function runAudit($: any) {
   const issues = [
     ...checkImagesAlt($),
-	...checkButtons($),
-	...checkInputs($),
+    ...checkButtons($),
+    ...checkInputs($),
     ...checkParagraphLength($),
   ];
 
-  const accessibilityIssues = issues.filter(i => i.type === "accessibility").length;
-  const readabilityIssues = issues.filter(i => i.type === "readability").length;
+  const accessibility = issues.filter(i => i.type === "accessibility").length;
+  const readability = issues.filter(i => i.type === "readability").length;
 
-  const contrastScore = 80; // placeholder for now
-  const accessibilityScore = Math.max(0, 100 - accessibilityIssues * 5);
-  const readabilityScore = Math.max(0, 100 - readabilityIssues * 3);
-  const performanceScore = 80; // placeholder for now
+  const accessibilityScore = 100 - accessibility * 5;
+  const readabilityScore = 100 - readability * 3;
+  const performanceScore = 80;
 
-  const overallScore = Math.round(
+  const score = Math.round(
     (accessibilityScore + readabilityScore + performanceScore) / 3
   );
 
   return {
-    score: overallScore,
+    score,
     categories: {
-		contrast: contrastScore,
-		accessibility: accessibilityScore,
-		readability: readabilityScore,
-		performance: performanceScore,
+      accessibility: accessibilityScore,
+      readability: readabilityScore,
+      performance: performanceScore,
     },
     issues,
   };
