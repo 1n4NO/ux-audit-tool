@@ -3,28 +3,42 @@
 import { useEffect, useState } from "react";
 
 export default function ThemeToggle() {
-  const [dark, setDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
+  // Prevent hydration mismatch
   useEffect(() => {
-    const stored = localStorage.getItem("theme") === "dark";
-    setDark(stored);
-    document.documentElement.classList.toggle("dark", stored);
+    setMounted(true);
+
+    const storedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
+
+    if (storedTheme) {
+      setTheme(storedTheme);
+      document.documentElement.classList.toggle("dark", storedTheme === "dark");
+    } else {
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      setTheme(prefersDark ? "dark" : "light");
+      document.documentElement.classList.toggle("dark", prefersDark);
+    }
   }, []);
 
   const toggleTheme = () => {
-    const newTheme = !dark;
-    setDark(newTheme);
+    const newTheme = theme === "dark" ? "light" : "dark";
 
-    localStorage.setItem("theme", newTheme ? "dark" : "light");
-    document.documentElement.classList.toggle("dark", newTheme);
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.documentElement.classList.toggle("dark", newTheme === "dark");
   };
+
+  // Avoid hydration flicker
+  if (!mounted) return null;
 
   return (
     <button
       onClick={toggleTheme}
-      className="absolute top-4 right-4 px-3 py-1 border rounded"
+      className="fixed top-4 right-4 px-4 py-2 rounded-lg border bg-white dark:bg-gray-800 shadow"
     >
-      {dark ? "☀️ Light" : "🌙 Dark"}
+      {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
     </button>
   );
 }
