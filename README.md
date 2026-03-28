@@ -157,20 +157,24 @@ audit.ts
 # 🚀 Getting Started
 
 ## 1. Clone the repository
-```js git clone https://github.com/1n4NO/ux-audit-tool.git
+```js
+git clone https://github.com/1n4NO/ux-audit-tool.git
 cd ux-audit-tool
 ```
 ## 2. Install dependencies
-```js npm install
+```js
+npm install
 ```
 ## 3. Run locally
-```js npm run dev
+```js 
+npm run dev
 ```
 # 🌍 Deployment
 
 This project will be deployed on Vercel.
 
-```js vercel deploy
+```js 
+vercel deploy
 ```
 
 ### 👉 Live link will be added soon
@@ -183,13 +187,14 @@ This project will be deployed on Vercel.
 ### 🔥 Chrome Extension (“Audit this page”)
 ### 🔥 Export reports (PDF)
 ### 🔥 Dark mode
-### 🎯 Why This Project Matters
+
+
+## 🎯 Why This Project Matters
 
 ### Most UX tools:
-
-### Require manual audits
-### Are expensive
-### Depend heavily on AI
+ Require manual audits
+ Are expensive
+ Depend heavily on AI
 
 #### UX Audit Engine proves that powerful developer tools can be built using deterministic logic and strong frontend engineering.
 
@@ -204,8 +209,8 @@ This project will be deployed on Vercel.
 
 # ⭐ Support
 
-## If you like this project:
+If you like this project:
 
-### ⭐ Star the repo
-### 🍴 Fork it
-### 🧠 Share feedback
+#### ⭐ Star the repo
+#### 🍴 Fork it
+#### 🧠 Share feedback
