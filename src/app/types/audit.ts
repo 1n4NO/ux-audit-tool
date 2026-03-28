@@ -9,7 +9,7 @@ export type AuditIssue = {
 export type AuditResult = {
   score: number;
   categories: {
-    conytrast: number;
+    contrast: number;
     accessibility: number;
     readability: number;
     performance: number;
