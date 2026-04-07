@@ -1,7 +1,14 @@
+import AppThemeProvider from "./components/AppThemeProvider";
 import ThemeToggle from "./components/ThemeToggle";
 import "./globals.css";
+import {
+  AppBar,
+  Box,
+  Container,
+  Toolbar,
+  Typography,
+} from "@mui/material";
 import Link from "next/link";
-import Script from "next/script";
 
 export default function RootLayout({
   children,
@@ -12,55 +19,49 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className="bg-gray-50 dark:bg-gray-900 text-black dark:text-white"
     >
-      <head>
-        <Script
-          id="theme-init"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  const theme = localStorage.getItem("theme");
-                  if (theme === "dark") {
-                    document.documentElement.classList.add("dark");
-                  } else if (theme === "light") {
-                    document.documentElement.classList.remove("dark");
-                  } else {
-                    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                    if (prefersDark) {
-                      document.documentElement.classList.add("dark");
-                    }
-                  }
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
-      </head>
+      <head />
       <body>
+        <AppThemeProvider>
+          <AppBar
+            position="sticky"
+            color="inherit"
+            elevation={0}
+            sx={{
+              borderBottom: "1px solid",
+              borderColor: "divider",
+              bgcolor: "background.paper",
+              backdropFilter: "blur(10px)",
+            }}
+          >
+            <Container maxWidth="lg">
+              <Toolbar disableGutters sx={{ justifyContent: "space-between", gap: 2 }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 800 }}
+                >
+                  <Link href="/" style={{ color: "inherit", textDecoration: "none" }}>
+                    UX Audit Engine
+                  </Link>
+                </Typography>
 
-        {/* NAVBAR */}
-        <header className="w-full border-b bg-white dark:bg-gray-800">
-          <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-            <Link href="/" className="font-bold text-lg">
-              UX Audit Engine
-            </Link>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Link href="/" style={{ color: "inherit", textDecoration: "none" }}>
+                    <Box sx={{ typography: "body2" }}>Home</Box>
+                  </Link>
+                  <Link href="/#features" style={{ color: "inherit", textDecoration: "none" }}>
+                    <Box sx={{ typography: "body2" }}>Features</Box>
+                  </Link>
+                  <ThemeToggle />
+                </Box>
+              </Toolbar>
+            </Container>
+          </AppBar>
 
-            <nav className="flex gap-4 text-sm items-center">
-              <Link href="/">Home</Link>
-              <Link href="/#features">Features</Link>
-              <ThemeToggle />
-            </nav>
-          </div>
-        </header>
-
-        {/* MAIN */}
-        <main className="max-w-6xl mx-auto px-6 py-10">
-          {children}
-        </main>
-
+          <Container component="main" maxWidth="lg" sx={{ py: 5 }}>
+            {children}
+          </Container>
+        </AppThemeProvider>
       </body>
     </html>
   );

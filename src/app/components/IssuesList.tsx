@@ -1,3 +1,10 @@
+import {
+  Alert,
+  Box,
+  Chip,
+  Paper,
+  Typography,
+} from "@mui/material";
 import { AuditIssue } from "@/app/types/audit";
 
 type SeverityLevel = AuditIssue["severity"];
@@ -5,15 +12,15 @@ type IssueGroup = AuditIssue["group"];
 type IssueType = AuditIssue["type"];
 
 const colors: Record<SeverityLevel, string> = {
-  low: "bg-green-100 text-green-700",
-  medium: "bg-yellow-100 text-yellow-700",
-  high: "bg-red-100 text-red-700",
+  low: "#15803d",
+  medium: "#ca8a04",
+  high: "#dc2626",
 };
 
 const typeColors: Record<IssueType, string> = {
-  accessibility: "bg-blue-100 text-blue-700",
-  readability: "bg-slate-100 text-slate-700",
-  performance: "bg-purple-100 text-purple-700",
+  accessibility: "#2563eb",
+  readability: "#475569",
+  performance: "#7c3aed",
 };
 
 const groupOrder: IssueGroup[] = [
@@ -34,60 +41,97 @@ export default function IssuesList({ issues }: { issues: AuditIssue[] }) {
   }));
 
   return (
-    <div className="space-y-6">
+    <Box sx={{ display: "grid", gap: 3 }}>
       {groupedIssues.map((section) => (
-        <section key={section.group}>
-          <div className="mb-3 flex items-center justify-between gap-4">
-            <h3 className="text-lg font-semibold">{section.group}</h3>
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <span>{section.issues.length} issue{section.issues.length === 1 ? "" : "s"}</span>
+        <Box key={section.group} component="section">
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              alignItems: { xs: "flex-start", sm: "center" },
+              justifyContent: "space-between",
+              gap: 1.5,
+              mb: 1.5,
+            }}
+          >
+            <Typography variant="h6">{section.group}</Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "text.secondary" }}>
+              <Typography variant="caption">
+                {section.issues.length} issue{section.issues.length === 1 ? "" : "s"}
+              </Typography>
               {section.issues.length > 0 && <SeveritySummary issues={section.issues} />}
-            </div>
-          </div>
+            </Box>
+          </Box>
 
           {section.issues.length === 0 ? (
-            <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            <Alert severity="success" variant="outlined">
               No issues found in this group.
-            </div>
+            </Alert>
           ) : (
-            <div className="space-y-4">
+            <Box sx={{ display: "grid", gap: 2 }}>
               {section.issues.map((issue) => (
-                <div
+                <Paper
                   key={issue.id}
-                  className="border rounded-xl p-4 bg-white dark:bg-gray-800 shadow-sm"
+                  variant="outlined"
+                  sx={{ p: 2 }}
                 >
-                  <div className="flex justify-between items-center mb-2 gap-3">
-                    <span className="font-semibold">{issue.message}</span>
-                    <div className="flex items-center gap-2">
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: { xs: "column", sm: "row" },
+                      alignItems: { xs: "flex-start", sm: "center" },
+                      justifyContent: "space-between",
+                      gap: 1.5,
+                      mb: 1,
+                    }}
+                  >
+                    <Typography variant="subtitle1" fontWeight={700}>
+                      {issue.message}
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                       <TypeBadge type={issue.type} />
                       <SeverityBadge level={issue.severity} />
-                    </div>
-                  </div>
+                    </Box>
+                  </Box>
 
-                  <p className="text-sm text-gray-600">{issue.suggestion}</p>
-                </div>
+                  <Typography variant="body2" color="text.secondary">
+                    {issue.suggestion}
+                  </Typography>
+                </Paper>
               ))}
-            </div>
+            </Box>
           )}
-        </section>
+        </Box>
       ))}
-    </div>
+    </Box>
   );
 }
 
 function SeverityBadge({ level }: { level: SeverityLevel }) {
   return (
-    <span className={`text-xs px-2 py-1 rounded ${colors[level]}`}>
-      {level.toUpperCase()}
-    </span>
+    <Chip
+      label={level.toUpperCase()}
+      size="small"
+      sx={{
+        bgcolor: `${colors[level]}1A`,
+        color: colors[level],
+        fontWeight: 700,
+      }}
+    />
   );
 }
 
 function TypeBadge({ type }: { type: IssueType }) {
   return (
-    <span className={`text-xs px-2 py-1 rounded ${typeColors[type]}`}>
-      {type}
-    </span>
+    <Chip
+      label={type}
+      size="small"
+      sx={{
+        bgcolor: `${typeColors[type]}1A`,
+        color: typeColors[type],
+        textTransform: "capitalize",
+      }}
+    />
   );
 }
 
@@ -99,14 +143,16 @@ function SeveritySummary({ issues }: { issues: AuditIssue[] }) {
   };
 
   return (
-    <div className="flex items-center gap-1">
-      {counts.high > 0 && <span className="rounded bg-red-100 px-2 py-1 text-red-700">{counts.high} high</span>}
-      {counts.medium > 0 && (
-        <span className="rounded bg-yellow-100 px-2 py-1 text-yellow-700">
-          {counts.medium} medium
-        </span>
+    <Box sx={{ display: "flex", gap: 0.75 }}>
+      {counts.high > 0 && (
+        <Chip size="small" label={`${counts.high} high`} sx={{ bgcolor: "#dc26261A", color: "#dc2626" }} />
       )}
-      {counts.low > 0 && <span className="rounded bg-green-100 px-2 py-1 text-green-700">{counts.low} low</span>}
-    </div>
+      {counts.medium > 0 && (
+        <Chip size="small" label={`${counts.medium} medium`} sx={{ bgcolor: "#ca8a041A", color: "#ca8a04" }} />
+      )}
+      {counts.low > 0 && (
+        <Chip size="small" label={`${counts.low} low`} sx={{ bgcolor: "#15803d1A", color: "#15803d" }} />
+      )}
+    </Box>
   );
 }

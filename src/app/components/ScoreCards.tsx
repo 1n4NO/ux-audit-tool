@@ -1,3 +1,9 @@
+import {
+  Box,
+  Paper,
+  Typography,
+  useTheme,
+} from "@mui/material";
 import { AuditResult } from "@/app/types/audit";
 
 export default function ScoreCards({ result }: { result: AuditResult }) {
@@ -10,8 +16,17 @@ export default function ScoreCards({ result }: { result: AuditResult }) {
   };
 
   return (
-    <div className="space-y-4 mb-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <Box sx={{ display: "grid", gap: 2.5, mb: 3 }}>
+      <Box
+        sx={{
+          display: "grid",
+          gap: 2,
+          gridTemplateColumns: {
+            xs: "repeat(2, minmax(0, 1fr))",
+            md: "repeat(4, minmax(0, 1fr))",
+          },
+        }}
+      >
         <Card title="Overall" value={score} issueCount={issueCounts.overall} />
         <Card
           title="Accessibility"
@@ -28,13 +43,16 @@ export default function ScoreCards({ result }: { result: AuditResult }) {
           value={categories.performance}
           issueCount={issueCounts.performance}
         />
-      </div>
+      </Box>
 
-      <div className="rounded-xl border bg-white p-4 text-sm text-gray-600 shadow-sm dark:bg-gray-800 dark:text-gray-300">
-        Scores are normalized against the checks you enabled. Each rule has a capped deduction
-        budget, so repeated issues from one heuristic do not overwhelm the full report.
-      </div>
-    </div>
+      <Paper variant="outlined" sx={{ p: 2 }}>
+        <Typography variant="body2" color="text.secondary">
+          Scores are normalized against the checks you enabled. Each rule has a capped
+          deduction budget, so repeated issues from one heuristic do not overwhelm the full
+          report.
+        </Typography>
+      </Paper>
+    </Box>
   );
 }
 
@@ -47,23 +65,44 @@ function Card({
   value: number;
   issueCount: number;
 }) {
+  const theme = useTheme();
+
   return (
-    <div className="bg-white dark:bg-gray-800 shadow rounded-xl p-4">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm text-gray-500">{title}</p>
-          <p className="mt-1 text-2xl font-bold">{value}</p>
-          <p className="mt-1 text-xs text-gray-500">
+    <Paper
+      elevation={0}
+      sx={{
+        p: 2,
+        border: `1px solid ${theme.palette.divider}`,
+        height: "100%",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography variant="body2" color="text.secondary">
+            {title}
+          </Typography>
+          <Typography variant="h4" sx={{ mt: 0.5 }}>
+            {value}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
             {issueCount} issue{issueCount === 1 ? "" : "s"}
-          </p>
-        </div>
+          </Typography>
+        </Box>
         <ScoreDial value={value} />
-      </div>
-    </div>
+      </Box>
+    </Paper>
   );
 }
 
 function ScoreDial({ value }: { value: number }) {
+  const theme = useTheme();
   const size = 68;
   const strokeWidth = 8;
   const radius = (size - strokeWidth) / 2;
@@ -72,16 +111,15 @@ function ScoreDial({ value }: { value: number }) {
   const color = getScoreColor(value);
 
   return (
-    <div className="relative h-[68px] w-[68px] shrink-0">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+    <Box sx={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }}>
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="currentColor"
           strokeWidth={strokeWidth}
-          className="text-gray-200 dark:text-gray-700"
+          stroke={theme.palette.mode === "dark" ? theme.palette.grey[700] : theme.palette.grey[200]}
         />
         <circle
           cx={size / 2}
@@ -95,10 +133,20 @@ function ScoreDial({ value }: { value: number }) {
           strokeDashoffset={dashOffset}
         />
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold">
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          typography: "caption",
+          fontWeight: 700,
+        }}
+      >
         {value}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }
 

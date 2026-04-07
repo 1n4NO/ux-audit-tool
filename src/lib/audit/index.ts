@@ -109,6 +109,7 @@ export async function runAudit(
   $: CheerioAPI,
   selectedChecks: string[] = AUDIT_CHECK_IDS
 ): Promise<AuditResult> {
+  const pageTitle = $("title").first().text().trim() || null;
   const enabledChecks = new Set(
     selectedChecks.filter((checkId) => AUDIT_CHECK_IDS.includes(checkId))
   );
@@ -144,6 +145,7 @@ export async function runAudit(
 
   return {
     score,
+    pageTitle,
     categories: {
       accessibility: accessibilityScore ?? 100,
       readability: readabilityScore ?? 100,

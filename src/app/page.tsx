@@ -7,15 +7,31 @@ import {
   SavedAuditHistoryItem,
   SavedAuditReport,
 } from "@/app/types/audit";
-import { useEffect, useRef, useState } from "react";
-import ScoreCards from "@/app/components/ScoreCards";
-import IssuesList from "@/app/components/IssuesList";
-import History from "./components/History";
 import {
   AUDIT_CHECKS,
   AuditCheckDefinition,
   getAuditCheckLabel,
 } from "@/lib/audit/checks";
+import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Alert,
+  Box,
+  Button,
+  Checkbox,
+  Chip,
+  FormControlLabel,
+  Paper,
+  TextField,
+  Typography,
+} from "@mui/material";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import History from "./components/History";
+import IssuesList from "./components/IssuesList";
+import ScoreCards from "./components/ScoreCards";
 
 type AuditNotice = {
   tone: "error" | "warning";
@@ -224,176 +240,217 @@ export default function Home() {
   }, [someChecksSelected]);
 
   return (
-    <div>
-
-      {/* HERO */}
-      <section className="text-center py-16">
-        <h1 className="text-5xl font-bold mb-4">
+    <Box sx={{ display: "grid", gap: 6 }}>
+      <Box component="section" sx={{ textAlign: "center", py: { xs: 4, md: 6 } }}>
+        <Typography variant="h2" sx={{ mb: 2, fontSize: { xs: "2.5rem", md: "3.75rem" } }}>
           UX Audit Engine
-        </h1>
-        <p className="text-gray-600 mb-6">
+        </Typography>
+        <Typography variant="h6" color="text.secondary" sx={{ mb: 4, maxWidth: 760, mx: "auto" }}>
           Run grouped accessibility, readability, and performance audits on public page URLs
-        </p>
+        </Typography>
 
-        <div className="max-w-xl mx-auto bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
-          <input
-            value={url}
-            onChange={(e) => {
-              setUrl(e.target.value);
-              if (notice) {
-                setNotice(null);
-              }
-            }}
-            placeholder="https://example.com"
-            className="w-full border p-3 rounded mb-4"
-          />
+        <Paper
+          variant="outlined"
+          sx={{
+            maxWidth: 720,
+            mx: "auto",
+            p: { xs: 2, md: 3 },
+            textAlign: "left",
+          }}
+        >
+          <Box sx={{ display: "grid", gap: 2 }}>
+            <TextField
+              fullWidth
+              label="Page URL"
+              value={url}
+              onChange={(event) => {
+                setUrl(event.target.value);
+                if (notice) {
+                  setNotice(null);
+                }
+              }}
+              placeholder="https://example.com"
+            />
 
-          <details className="mb-4 rounded-lg border">
-            <summary className="cursor-pointer list-none px-4 py-3 text-left font-medium">
-              Audit Checks
-              <span className="ml-2 text-sm text-gray-500">
-                {selectedChecks.length}/{AUDIT_CHECKS.length} selected
-              </span>
-            </summary>
+            <Accordion disableGutters variant="outlined">
+              <AccordionSummary expandIcon={<ExpandMoreRoundedIcon />}>
+                <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
+                  <Typography fontWeight={600}>Audit Checks</Typography>
+                  <Chip
+                    size="small"
+                    label={`${selectedChecks.length}/${AUDIT_CHECKS.length} selected`}
+                  />
+                </Box>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Box sx={{ display: "grid", gap: 3 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        inputRef={selectAllRef}
+                        checked={allChecksSelected}
+                        onChange={toggleAllChecks}
+                      />
+                    }
+                    label="Select all"
+                  />
 
-            <div className="border-t px-4 py-3 text-left">
-              <label className="mb-3 flex items-center gap-2 text-sm font-medium">
-                <input
-                  ref={selectAllRef}
-                  type="checkbox"
-                  checked={allChecksSelected}
-                  onChange={toggleAllChecks}
-                />
-                Select all
-              </label>
-
-              <div className="space-y-4">
-                {Object.entries(checksByGroup).map(([group, checks]) => (
-                  <div key={group}>
-                    <div className="mb-2 flex items-center justify-between gap-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                        {group}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => toggleGroupChecks(checks)}
-                        className="text-xs text-gray-500 underline"
+                  {Object.entries(checksByGroup).map(([group, checks]) => (
+                    <Box key={group}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 2,
+                          mb: 1,
+                        }}
                       >
-                        {checks.every((check) => selectedChecks.includes(check.id))
-                          ? "Clear group"
-                          : "Select group"}
-                      </button>
-                    </div>
-                    <div className="space-y-2">
-                      {checks.map((check) => (
-                        <label key={check.id} className="flex items-start gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={selectedChecks.includes(check.id)}
-                            onChange={() => toggleCheck(check.id)}
+                        <Typography variant="overline" color="text.secondary">
+                          {group}
+                        </Typography>
+                        <Button
+                          type="button"
+                          size="small"
+                          onClick={() => toggleGroupChecks(checks)}
+                        >
+                          {checks.every((check) => selectedChecks.includes(check.id))
+                            ? "Clear group"
+                            : "Select group"}
+                        </Button>
+                      </Box>
+                      <Box sx={{ display: "grid", gap: 0.5 }}>
+                        {checks.map((check) => (
+                          <FormControlLabel
+                            key={check.id}
+                            control={
+                              <Checkbox
+                                checked={selectedChecks.includes(check.id)}
+                                onChange={() => toggleCheck(check.id)}
+                              />
+                            }
+                            label={check.label}
                           />
-                          <span>{check.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </details>
+                        ))}
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </AccordionDetails>
+            </Accordion>
 
-          <button
-            onClick={handleAudit}
-            disabled={loading}
-            className="w-full bg-black text-white py-3 rounded disabled:opacity-60"
-          >
-            {loading ? "Analyzing..." : "Run Audit"}
-          </button>
-
-          <p className="mt-3 text-xs text-gray-500">
-            Use a public page URL. Results come from deterministic HTML checks, and some sites may block automated access or time out.
-          </p>
-
-          {notice && (
-            <div
-              className={`mt-4 rounded border px-3 py-3 text-sm ${
-                notice.tone === "warning"
-                  ? "border-amber-200 bg-amber-50 text-amber-800"
-                  : "border-red-200 bg-red-50 text-red-700"
-              }`}
+            <Button
+              variant="contained"
+              size="large"
+              disabled={loading}
+              onClick={handleAudit}
+              sx={{ py: 1.5 }}
             >
-              <p className="font-semibold">{notice.title}</p>
-              <p className="mt-1">{notice.message}</p>
-            </div>
-          )}
-        </div>
-      </section>
+              {loading ? "Analyzing..." : "Run Audit"}
+            </Button>
 
-      {/* FEATURES */}
-      <section id="features" className="py-16">
-        <h2 className="text-3xl font-bold text-center mb-10">
+            <Typography variant="caption" color="text.secondary">
+              Use a public page URL. Results come from deterministic HTML checks, and some
+              sites may block automated access or time out.
+            </Typography>
+
+            {notice && (
+              <Alert severity={notice.tone === "warning" ? "warning" : "error"}>
+                <Typography variant="subtitle2">{notice.title}</Typography>
+                <Typography variant="body2">{notice.message}</Typography>
+              </Alert>
+            )}
+          </Box>
+        </Paper>
+      </Box>
+
+      <Box component="section" id="features">
+        <Typography variant="h4" textAlign="center" sx={{ mb: 4 }}>
           Features
-        </h2>
-
-        <div className="grid md:grid-cols-3 gap-6">
+        </Typography>
+        <Box
+          sx={{
+            display: "grid",
+            gap: 2,
+            gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+          }}
+        >
           <Feature title="Selective Audits" desc="Choose the exact checks you want to run" />
-          <Feature title="Grouped Reports" desc="Review findings by document, forms, links, media, and more" />
-          <Feature title="Normalized Scores" desc="Compare enabled categories without a fake baseline" />
-        </div>
-      </section>
+          <Feature
+            title="Grouped Reports"
+            desc="Review findings by document, forms, links, media, and more"
+          />
+          <Feature
+            title="Normalized Scores"
+            desc="Compare enabled categories without a fake baseline"
+          />
+        </Box>
+      </Box>
 
-      {/* 🧠 HOW IT WORKS */}
-      <section className="bg-white dark:bg-gray-800 py-16 px-6">
-        <h2 className="text-3xl font-bold text-center mb-10">
+      <Paper component="section" variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
+        <Typography variant="h4" textAlign="center" sx={{ mb: 4 }}>
           How It Works
-        </h2>
+        </Typography>
 
-        <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-6 text-center">
+        <Box
+          sx={{
+            display: "grid",
+            gap: 3,
+            gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+          }}
+        >
           <Step title="1. Enter URL" desc="Paste a public page URL" />
-          <Step title="2. Select Checks" desc="Choose accessibility, readability, and performance rules" />
-          <Step title="3. Review Report" desc="Inspect grouped findings and category scores" />
-        </div>
-      </section>
+          <Step
+            title="2. Select Checks"
+            desc="Choose accessibility, readability, and performance rules"
+          />
+          <Step
+            title="3. Review Report"
+            desc="Inspect grouped findings and category scores"
+          />
+        </Box>
+      </Paper>
 
-      {/* RESULTS */}
       {result && (
-        <section className="py-10">
+        <Box component="section">
           <ScoreCards result={result} />
           <SelectedChecksSummary selectedChecks={result.selectedChecks ?? selectedChecks} />
           <IssuesList issues={result.issues} />
 
-          {/* SAVE CONFIRMATION */}
-          <div className="mt-6 p-4 bg-green-100 text-green-700 rounded">
-            ✅ Report saved
-            <div>
-              <a href={`/report/${result.id}`} className="underline text-sm">
+          <Alert severity="success" sx={{ mt: 3 }}>
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
+              <Typography variant="body2" fontWeight={600}>
+                Report saved.
+              </Typography>
+              <Link
+                href={`/report/${result.id}`}
+                style={{ textDecoration: "underline", color: "inherit" }}
+              >
                 View Report
-              </a>
-            </div>
-          </div>
-        </section>
+              </Link>
+            </Box>
+          </Alert>
+        </Box>
       )}
 
       <History />
 
-      {/* 🎯 CTA */}
-      <section className="text-center py-20 px-6">
-        <h2 className="text-3xl font-bold mb-4">
+      <Box component="section" sx={{ textAlign: "center", py: { xs: 2, md: 4 } }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>
           Audit real pages with targeted checks
-        </h2>
-        <p className="text-gray-600 mb-6">
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
           Start with deterministic heuristics, then iterate toward deeper audits
-        </p>
+        </Typography>
 
-        <button
+        <Button
+          variant="contained"
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="bg-black text-white px-6 py-3 rounded-lg"
         >
           Try Now
-        </button>
-      </section>
-
-    </div>
+        </Button>
+      </Box>
+    </Box>
   );
 }
 
@@ -415,41 +472,52 @@ function getErrorTitle(status: number) {
 
 function Feature({ title, desc }: { title: string; desc: string }) {
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded shadow">
-      <h3 className="font-semibold mb-2">{title}</h3>
-      <p className="text-sm text-gray-600">{desc}</p>
-    </div>
+    <Paper variant="outlined" sx={{ p: 3, height: "100%" }}>
+      <Typography variant="h6" sx={{ mb: 1 }}>
+        {title}
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        {desc}
+      </Typography>
+    </Paper>
   );
 }
 
 function Step({ title, desc }: { title: string; desc: string }) {
   return (
-    <div>
-      <h3 className="font-semibold text-lg mb-2">{title}</h3>
-      <p className="text-gray-600 text-sm">{desc}</p>
-    </div>
+    <Box textAlign="center">
+      <Typography variant="h6" sx={{ mb: 1 }}>
+        {title}
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        {desc}
+      </Typography>
+    </Box>
   );
 }
 
 function SelectedChecksSummary({ selectedChecks }: { selectedChecks: string[] }) {
   return (
-    <div className="mb-6 rounded-xl border bg-white p-4 shadow-sm dark:bg-gray-800">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold">Audit Scope</h3>
-        <span className="text-xs text-gray-500">
+    <Paper variant="outlined" sx={{ mb: 3, p: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 2,
+          mb: 1.5,
+        }}
+      >
+        <Typography variant="subtitle2">Audit Scope</Typography>
+        <Typography variant="caption" color="text.secondary">
           {selectedChecks.length} selected
-        </span>
-      </div>
-      <div className="flex flex-wrap gap-2">
+        </Typography>
+      </Box>
+      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
         {selectedChecks.map((checkId) => (
-          <span
-            key={checkId}
-            className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200"
-          >
-            {getAuditCheckLabel(checkId)}
-          </span>
+          <Chip key={checkId} label={getAuditCheckLabel(checkId)} size="small" />
         ))}
-      </div>
-    </div>
+      </Box>
+    </Paper>
   );
 }

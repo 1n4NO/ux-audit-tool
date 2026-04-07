@@ -1,11 +1,22 @@
 "use client";
 
-import { isSavedAuditReport, SavedAuditReport } from "@/app/types/audit";
-import { useParams, useRouter } from "next/navigation";
-import ScoreCards from "@/app/components/ScoreCards";
-import IssuesList from "@/app/components/IssuesList";
-import { useMemo, useSyncExternalStore } from "react";
 import { getAuditCheckLabel } from "@/lib/audit/checks";
+import { isSavedAuditReport, SavedAuditReport } from "@/app/types/audit";
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
+import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  Paper,
+  Typography,
+} from "@mui/material";
+import { useParams, useRouter } from "next/navigation";
+import { useMemo, useSyncExternalStore } from "react";
+import IssuesList from "@/app/components/IssuesList";
+import ScoreCards from "@/app/components/ScoreCards";
 
 function subscribeToBrowserState() {
   return () => {};
@@ -39,101 +50,128 @@ export default function ReportPage() {
   }, [isClient, reportId]);
 
   if (!isClient) {
-    return <p className="text-sm text-gray-500">Loading report...</p>;
+    return (
+      <Typography variant="body2" color="text.secondary">
+        Loading report...
+      </Typography>
+    );
   }
 
   if (!reportId || !data) {
     return (
-      <div className="max-w-2xl">
-        <button
+      <Box sx={{ display: "grid", gap: 3, maxWidth: 720 }}>
+        <Button
+          variant="text"
+          color="inherit"
+          startIcon={<ArrowBackRoundedIcon />}
           onClick={() => router.push("/")}
-          className="mb-6 text-sm text-gray-600 hover:underline"
+          sx={{ alignSelf: "flex-start" }}
         >
-          ← Back to Home
-        </button>
+          Back to Home
+        </Button>
 
-        <div className="rounded-xl border bg-white p-6 shadow dark:bg-gray-800">
-          <h1 className="text-2xl font-bold mb-2">Report not found</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+        <Paper variant="outlined" sx={{ p: 3 }}>
+          <Typography variant="h4" sx={{ mb: 1 }}>
+            Report not found
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
             This report is missing, invalid, or unavailable in this browser.
-          </p>
-        </div>
-      </div>
+          </Typography>
+        </Paper>
+      </Box>
     );
   }
 
   return (
-    <div>
-
-      {/* BACK */}
-      <button
+    <Box sx={{ display: "grid", gap: 3 }}>
+      <Button
+        variant="text"
+        color="inherit"
+        startIcon={<ArrowBackRoundedIcon />}
         onClick={() => router.push("/")}
-        className="mb-6 text-sm text-gray-600 hover:underline"
+        sx={{ alignSelf: "flex-start" }}
       >
-        ← Back to Home
-      </button>
+        Back to Home
+      </Button>
 
-      {/* HEADER */}
-      <h1 className="text-3xl font-bold mb-2">Audit Report</h1>
-      <p className="text-gray-500 mb-4 text-sm">
-        URL: {data.url}
-      </p>
+      <Box>
+        <Typography variant="h3" sx={{ mb: 1 }}>
+          Audit Report
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          URL: {data.url}
+        </Typography>
+      </Box>
 
-      {/* SCORES */}
       <ScoreCards result={data} />
+
       {data.selectedChecks && data.selectedChecks.length > 0 && (
-        <div className="mb-6 rounded-xl border bg-white p-4 shadow-sm dark:bg-gray-800">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold">Audit Scope</h2>
-            <span className="text-xs text-gray-500">
+        <Paper variant="outlined" sx={{ p: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 2,
+              mb: 1.5,
+            }}
+          >
+            <Typography variant="subtitle2">Audit Scope</Typography>
+            <Typography variant="caption" color="text.secondary">
               {data.selectedChecks.length} selected
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
             {data.selectedChecks.map((checkId) => (
-              <span
-                key={checkId}
-                className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200"
-              >
-                {getAuditCheckLabel(checkId)}
-              </span>
+              <Chip key={checkId} size="small" label={getAuditCheckLabel(checkId)} />
             ))}
-          </div>
-        </div>
+          </Box>
+        </Paper>
       )}
 
-      {/* ACTIONS */}
-      <div className="flex gap-3 my-6">
-        <button
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          gap: 1.5,
+        }}
+      >
+        <Button
+          variant="contained"
+          startIcon={<ContentCopyRoundedIcon />}
           onClick={() => {
             navigator.clipboard.writeText(window.location.href);
             alert("Link copied!");
           }}
-          className="bg-black text-white px-4 py-2 rounded"
         >
           Copy Link
-        </button>
+        </Button>
 
-        <button
+        <Button
+          variant="outlined"
+          startIcon={<DownloadRoundedIcon />}
           onClick={() => {
             const blob = new Blob([JSON.stringify(data, null, 2)], {
               type: "application/json",
             });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "report.json";
-            a.click();
+            const anchor = document.createElement("a");
+            anchor.href = url;
+            anchor.download = "report.json";
+            anchor.click();
           }}
-          className="border px-4 py-2 rounded"
         >
           Download
-        </button>
-      </div>
+        </Button>
+      </Box>
 
-      {/* ISSUES */}
+      {data.pageTitle && (
+        <Alert severity="info" variant="outlined">
+          Source page title: {data.pageTitle}
+        </Alert>
+      )}
+
       <IssuesList issues={data.issues} />
-
-    </div>
+    </Box>
   );
 }

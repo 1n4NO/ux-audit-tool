@@ -17,6 +17,7 @@ export type AuditIssue = {
 
 export type AuditResult = {
   score: number;
+  pageTitle: string | null;
   categories: {
     accessibility: number;
     readability: number;
@@ -81,6 +82,9 @@ export function isAuditResult(value: unknown): value is AuditResult {
 
   return (
     typeof value.score === "number" &&
+    (value.pageTitle === undefined ||
+      value.pageTitle === null ||
+      typeof value.pageTitle === "string") &&
     typeof value.categories.accessibility === "number" &&
     typeof value.categories.readability === "number" &&
     typeof value.categories.performance === "number" &&
