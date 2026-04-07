@@ -2,48 +2,83 @@ import { AuditIssue } from "@/app/types/audit";
 import { CheerioAPI } from "cheerio";
 
 export function checkRenderBlockingScripts($: CheerioAPI): AuditIssue[] {
-  const issues: AuditIssue[] = [];
+  let blockingScriptCount = 0;
 
-  $("head script[src]").each((i, el) => {
+  $("head script[src]").each((_, el) => {
     const isAsync = $(el).attr("async") !== undefined;
     const isDeferred = $(el).attr("defer") !== undefined;
     const type = $(el).attr("type")?.trim().toLowerCase();
 
     if (!isAsync && !isDeferred && type !== "module") {
-      issues.push({
-        id: `render-blocking-script-${i}`,
-        type: "performance",
-        group: "Document",
-        severity: "high",
-        message: "Script in head may block rendering",
-        suggestion: "Use defer, async, or module scripts when possible",
-      });
+      blockingScriptCount += 1;
     }
   });
 
-  return issues;
+  if (blockingScriptCount === 0) {
+    return [];
+  }
+
+  return [
+    {
+      id: "render-blocking-scripts",
+      type: "performance",
+      group: "Document",
+      severity: blockingScriptCount >= 3 ? "high" : "medium",
+      message: `${blockingScriptCount} head script${
+        blockingScriptCount === 1 ? "" : "s"
+      } may block rendering`,
+      suggestion: "Use defer, async, or module scripts when possible",
+    },
+  ];
 }
 
 export function checkLargeDomSize($: CheerioAPI): AuditIssue[] {
-  const issues: AuditIssue[] = [];
   const elementCount = $("*").length;
 
-  if (elementCount > 1500) {
-    issues.push({
+  if (elementCount > 2500) {
+    return [
+      {
+        id: "dom-size-large",
+        type: "performance",
+        group: "Document",
+        severity: "high",
+        message: `Page has a very large DOM size (${elementCount} elements)`,
+        suggestion: "Reduce unnecessary markup and deeply nested elements",
+      },
+    ];
+  }
+
+  if (elementCount > 1400) {
+    return [
+      {
       id: "dom-size-large",
       type: "performance",
       group: "Document",
-      severity: elementCount > 3000 ? "high" : "medium",
-      message: "Page has a large DOM size",
+      severity: "medium",
+      message: `Page has a large DOM size (${elementCount} elements)`,
       suggestion: "Reduce unnecessary markup and deeply nested elements",
-    });
+      },
+    ];
   }
 
-  return issues;
+  if (elementCount > 800) {
+    return [
+      {
+        id: "dom-size-large",
+        type: "performance",
+        group: "Document",
+        severity: "low",
+        message: `Page DOM is getting large (${elementCount} elements)`,
+        suggestion: "Keep DOM size under control to reduce layout and rendering work",
+      },
+    ];
+  }
+
+  return [];
 }
 
 export function checkLazyLoadedImages($: CheerioAPI): AuditIssue[] {
-  const issues: AuditIssue[] = [];
+  let nonLazyImageCount = 0;
 
   $("img").each((i, el) => {
     if (i < 2) {
@@ -53,77 +88,128 @@ export function checkLazyLoadedImages($: CheerioAPI): AuditIssue[] {
     const loading = $(el).attr("loading")?.trim().toLowerCase();
 
     if (loading !== "lazy") {
-      issues.push({
-        id: `image-lazy-${i}`,
-        type: "performance",
-        group: "Images",
-        severity: "medium",
-        message: "Offscreen image is missing lazy loading",
-        suggestion: "Add loading='lazy' to non-critical images",
-      });
+      nonLazyImageCount += 1;
     }
   });
 
-  return issues;
+  if (nonLazyImageCount < 2) {
+    return [];
+  }
+
+  return [
+    {
+      id: "images-lazy-loading",
+      type: "performance",
+      group: "Images",
+      severity: nonLazyImageCount >= 6 ? "high" : "medium",
+      message: `${nonLazyImageCount} non-critical image${
+        nonLazyImageCount === 1 ? "" : "s"
+      } may be missing lazy loading`,
+      suggestion: "Add loading='lazy' to non-critical images",
+    },
+  ];
 }
 
 export function checkImageDimensions($: CheerioAPI): AuditIssue[] {
-  const issues: AuditIssue[] = [];
+  let missingDimensionCount = 0;
 
-  $("img").each((i, el) => {
+  $("img").each((_, el) => {
     const width = $(el).attr("width")?.trim();
     const height = $(el).attr("height")?.trim();
 
     if (!width || !height) {
-      issues.push({
-        id: `image-dimensions-${i}`,
-        type: "performance",
-        group: "Images",
-        severity: "medium",
-        message: "Image is missing explicit dimensions",
-        suggestion: "Set width and height to reduce layout shifts",
-      });
+      missingDimensionCount += 1;
     }
   });
 
-  return issues;
+  if (missingDimensionCount < 2) {
+    return [];
+  }
+
+  return [
+    {
+      id: "image-dimensions",
+      type: "performance",
+      group: "Images",
+      severity: missingDimensionCount >= 8 ? "high" : "medium",
+      message: `${missingDimensionCount} image${
+        missingDimensionCount === 1 ? "" : "s"
+      } are missing explicit dimensions`,
+      suggestion: "Set width and height to reduce layout shifts",
+    },
+  ];
 }
 
 export function checkLazyLoadedIframes($: CheerioAPI): AuditIssue[] {
-  const issues: AuditIssue[] = [];
+  let nonLazyIframeCount = 0;
 
-  $("iframe").each((i, el) => {
+  $("iframe").each((_, el) => {
     const loading = $(el).attr("loading")?.trim().toLowerCase();
 
     if (loading !== "lazy") {
-      issues.push({
-        id: `iframe-lazy-${i}`,
-        type: "performance",
-        group: "Media",
-        severity: "medium",
-        message: "Iframe is missing lazy loading",
-        suggestion: "Add loading='lazy' to defer offscreen iframe work",
-      });
+      nonLazyIframeCount += 1;
     }
   });
 
-  return issues;
+  if (nonLazyIframeCount === 0) {
+    return [];
+  }
+
+  return [
+    {
+      id: "iframes-lazy-loading",
+      type: "performance",
+      group: "Media",
+      severity: nonLazyIframeCount >= 3 ? "high" : "medium",
+      message: `${nonLazyIframeCount} iframe${
+        nonLazyIframeCount === 1 ? "" : "s"
+      } may be loading too early`,
+      suggestion: "Add loading='lazy' to defer offscreen iframe work",
+    },
+  ];
 }
 
 export function checkStylesheetCount($: CheerioAPI): AuditIssue[] {
-  const issues: AuditIssue[] = [];
   const stylesheetCount = $('link[rel="stylesheet"]').length;
 
-  if (stylesheetCount > 4) {
-    issues.push({
+  if (stylesheetCount > 10) {
+    return [
+      {
+        id: "stylesheet-count",
+        type: "performance",
+        group: "Metadata",
+        severity: "high",
+        message: `Page loads ${stylesheetCount} stylesheet files`,
+        suggestion: "Reduce stylesheet requests or combine non-critical CSS",
+      },
+    ];
+  }
+
+  if (stylesheetCount > 6) {
+    return [
+      {
       id: "stylesheet-count",
       type: "performance",
       group: "Metadata",
-      severity: stylesheetCount > 8 ? "high" : "medium",
-      message: "Page uses many stylesheet files",
+      severity: "medium",
+      message: `Page loads ${stylesheetCount} stylesheet files`,
       suggestion: "Reduce stylesheet requests or combine non-critical CSS",
-    });
+      },
+    ];
   }
 
-  return issues;
+  if (stylesheetCount > 4) {
+    return [
+      {
+        id: "stylesheet-count",
+        type: "performance",
+        group: "Metadata",
+        severity: "low",
+        message: `Page loads ${stylesheetCount} stylesheet files`,
+        suggestion: "Review whether all stylesheet requests are necessary",
+      },
+    ];
+  }
+
+  return [];
 }

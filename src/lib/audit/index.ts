@@ -71,10 +71,10 @@ const CHECK_RUNNERS: AuditCheckRunner[] = [
   { id: "page-length", type: "readability", maxDeduction: 10, run: checkPageLength },
   { id: "render-blocking-scripts", type: "performance", maxDeduction: 30, run: checkRenderBlockingScripts },
   { id: "dom-size", type: "performance", maxDeduction: 25, run: checkLargeDomSize },
-  { id: "images-lazy-loading", type: "performance", maxDeduction: 25, run: checkLazyLoadedImages },
-  { id: "image-dimensions", type: "performance", maxDeduction: 25, run: checkImageDimensions },
+  { id: "images-lazy-loading", type: "performance", maxDeduction: 20, run: checkLazyLoadedImages },
+  { id: "image-dimensions", type: "performance", maxDeduction: 15, run: checkImageDimensions },
   { id: "iframes-lazy-loading", type: "performance", maxDeduction: 20, run: checkLazyLoadedIframes },
-  { id: "stylesheet-count", type: "performance", maxDeduction: 20, run: checkStylesheetCount },
+  { id: "stylesheet-count", type: "performance", maxDeduction: 15, run: checkStylesheetCount },
 ];
 
 function calculateCheckDeduction(issues: AuditIssue[], maxDeduction: number) {
