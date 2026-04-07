@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 import * as cheerio from "cheerio";
 import { runAudit } from "@/lib/audit";
+import { AUDIT_CHECK_IDS } from "@/lib/audit/checks";
 
 const REQUEST_TIMEOUT_MS = 10000;
 const MAX_REDIRECTS = 5;
@@ -54,11 +55,25 @@ function validateAuditUrl(value: unknown) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { url } = await req.json();
+    const body = (await req.json()) as { url?: unknown; checks?: unknown };
+    const { url, checks } = body;
     const validation = validateAuditUrl(url);
 
     if ("error" in validation) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    const selectedChecks = Array.isArray(checks)
+      ? checks.filter((check): check is string => {
+          return typeof check === "string" && AUDIT_CHECK_IDS.includes(check);
+        })
+      : AUDIT_CHECK_IDS;
+
+    if (selectedChecks.length === 0) {
+      return NextResponse.json(
+        { error: "Select at least one audit check" },
+        { status: 400 }
+      );
     }
 
     const response = await axios.get<string>(validation.url, {
@@ -70,7 +85,7 @@ export async function POST(req: NextRequest) {
 
     const $ = cheerio.load(html);
 
-    const result = await runAudit($);
+    const result = await runAudit($, selectedChecks);
 
     return NextResponse.json(result);
   } catch (error: unknown) {

@@ -11,6 +11,7 @@ import { useState } from "react";
 import ScoreCards from "@/app/components/ScoreCards";
 import IssuesList from "@/app/components/IssuesList";
 import History from "./components/History";
+import { AUDIT_CHECKS, AuditCheckDefinition } from "@/lib/audit/checks";
 
 type AuditNotice = {
   tone: "error" | "warning";
@@ -32,6 +33,9 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SavedAuditReport | null>(null);
   const [notice, setNotice] = useState<AuditNotice | null>(null);
+  const [selectedChecks, setSelectedChecks] = useState<string[]>(
+    AUDIT_CHECKS.map((check) => check.id)
+  );
 
   const handleAudit = async () => {
     const trimmedUrl = url.trim();
@@ -46,6 +50,16 @@ export default function Home() {
       return;
     }
 
+    if (selectedChecks.length === 0) {
+      setResult(null);
+      setNotice({
+        tone: "warning",
+        title: "No checks selected",
+        message: "Select at least one audit check before running the audit.",
+      });
+      return;
+    }
+
     setLoading(true);
     setNotice(null);
 
@@ -55,7 +69,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ url: trimmedUrl }),
+        body: JSON.stringify({ url: trimmedUrl, checks: selectedChecks }),
       });
 
       if (!res.ok) {
@@ -117,6 +131,30 @@ export default function Home() {
     }
   };
 
+  const allChecksSelected = selectedChecks.length === AUDIT_CHECKS.length;
+  const checksByGroup = AUDIT_CHECKS.reduce<Record<string, AuditCheckDefinition[]>>(
+    (groups, check) => {
+      groups[check.group] ??= [];
+      groups[check.group].push(check);
+      return groups;
+    },
+    {}
+  );
+
+  const toggleCheck = (checkId: string) => {
+    setSelectedChecks((current) => {
+      if (current.includes(checkId)) {
+        return current.filter((id) => id !== checkId);
+      }
+
+      return [...current, checkId];
+    });
+  };
+
+  const toggleAllChecks = () => {
+    setSelectedChecks(allChecksSelected ? [] : AUDIT_CHECKS.map((check) => check.id));
+  };
+
   return (
     <div>
 
@@ -142,10 +180,52 @@ export default function Home() {
             className="w-full border p-3 rounded mb-4"
           />
 
+          <details className="mb-4 rounded-lg border">
+            <summary className="cursor-pointer list-none px-4 py-3 text-left font-medium">
+              Audit Checks
+              <span className="ml-2 text-sm text-gray-500">
+                {selectedChecks.length}/{AUDIT_CHECKS.length} selected
+              </span>
+            </summary>
+
+            <div className="border-t px-4 py-3 text-left">
+              <label className="mb-3 flex items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={allChecksSelected}
+                  onChange={toggleAllChecks}
+                />
+                Select all
+              </label>
+
+              <div className="space-y-4">
+                {Object.entries(checksByGroup).map(([group, checks]) => (
+                  <div key={group}>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      {group}
+                    </p>
+                    <div className="space-y-2">
+                      {checks.map((check) => (
+                        <label key={check.id} className="flex items-start gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={selectedChecks.includes(check.id)}
+                            onChange={() => toggleCheck(check.id)}
+                          />
+                          <span>{check.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </details>
+
           <button
             onClick={handleAudit}
             disabled={loading}
-            className="w-full bg-black text-white py-3 rounded"
+            className="w-full bg-black text-white py-3 rounded disabled:opacity-60"
           >
             {loading ? "Analyzing..." : "Run Audit"}
           </button>
