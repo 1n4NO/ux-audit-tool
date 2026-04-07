@@ -35,7 +35,7 @@ export function checkRenderBlockingScripts($: CheerioAPI): AuditIssue[] {
 export function checkLargeDomSize($: CheerioAPI): AuditIssue[] {
   const elementCount = $("*").length;
 
-  if (elementCount > 2500) {
+  if (elementCount > 4000) {
     return [
       {
         id: "dom-size-large",
@@ -48,20 +48,20 @@ export function checkLargeDomSize($: CheerioAPI): AuditIssue[] {
     ];
   }
 
-  if (elementCount > 1400) {
+  if (elementCount > 2500) {
     return [
       {
-      id: "dom-size-large",
-      type: "performance",
-      group: "Document",
-      severity: "medium",
-      message: `Page has a large DOM size (${elementCount} elements)`,
-      suggestion: "Reduce unnecessary markup and deeply nested elements",
+        id: "dom-size-large",
+        type: "performance",
+        group: "Document",
+        severity: "medium",
+        message: `Page has a large DOM size (${elementCount} elements)`,
+        suggestion: "Reduce unnecessary markup and deeply nested elements",
       },
     ];
   }
 
-  if (elementCount > 800) {
+  if (elementCount > 1500) {
     return [
       {
         id: "dom-size-large",
@@ -81,18 +81,31 @@ export function checkLazyLoadedImages($: CheerioAPI): AuditIssue[] {
   let nonLazyImageCount = 0;
 
   $("img").each((i, el) => {
-    if (i < 2) {
+    if (i < 3) {
       return;
     }
 
+    const src = $(el).attr("src")?.trim().toLowerCase() || "";
     const loading = $(el).attr("loading")?.trim().toLowerCase();
+    const fetchPriority = $(el).attr("fetchpriority")?.trim().toLowerCase();
+    const width = Number($(el).attr("width"));
+    const height = Number($(el).attr("height"));
+
+    if (
+      fetchPriority === "high" ||
+      src.startsWith("data:image/svg") ||
+      src.endsWith(".svg") ||
+      (Number.isFinite(width) && Number.isFinite(height) && width <= 64 && height <= 64)
+    ) {
+      return;
+    }
 
     if (loading !== "lazy") {
       nonLazyImageCount += 1;
     }
   });
 
-  if (nonLazyImageCount < 2) {
+  if (nonLazyImageCount < 3) {
     return [];
   }
 
@@ -101,7 +114,8 @@ export function checkLazyLoadedImages($: CheerioAPI): AuditIssue[] {
       id: "images-lazy-loading",
       type: "performance",
       group: "Images",
-      severity: nonLazyImageCount >= 6 ? "high" : "medium",
+      severity:
+        nonLazyImageCount >= 10 ? "high" : nonLazyImageCount >= 6 ? "medium" : "low",
       message: `${nonLazyImageCount} non-critical image${
         nonLazyImageCount === 1 ? "" : "s"
       } may be missing lazy loading`,
@@ -114,15 +128,20 @@ export function checkImageDimensions($: CheerioAPI): AuditIssue[] {
   let missingDimensionCount = 0;
 
   $("img").each((_, el) => {
+    const src = $(el).attr("src")?.trim().toLowerCase() || "";
     const width = $(el).attr("width")?.trim();
     const height = $(el).attr("height")?.trim();
+
+    if (src.startsWith("data:image/svg") || src.endsWith(".svg")) {
+      return;
+    }
 
     if (!width || !height) {
       missingDimensionCount += 1;
     }
   });
 
-  if (missingDimensionCount < 2) {
+  if (missingDimensionCount < 3) {
     return [];
   }
 
@@ -131,7 +150,8 @@ export function checkImageDimensions($: CheerioAPI): AuditIssue[] {
       id: "image-dimensions",
       type: "performance",
       group: "Images",
-      severity: missingDimensionCount >= 8 ? "high" : "medium",
+      severity:
+        missingDimensionCount >= 10 ? "high" : missingDimensionCount >= 6 ? "medium" : "low",
       message: `${missingDimensionCount} image${
         missingDimensionCount === 1 ? "" : "s"
       } are missing explicit dimensions`,
@@ -160,7 +180,8 @@ export function checkLazyLoadedIframes($: CheerioAPI): AuditIssue[] {
       id: "iframes-lazy-loading",
       type: "performance",
       group: "Media",
-      severity: nonLazyIframeCount >= 3 ? "high" : "medium",
+      severity:
+        nonLazyIframeCount >= 4 ? "high" : nonLazyIframeCount >= 2 ? "medium" : "low",
       message: `${nonLazyIframeCount} iframe${
         nonLazyIframeCount === 1 ? "" : "s"
       } may be loading too early`,
@@ -172,7 +193,7 @@ export function checkLazyLoadedIframes($: CheerioAPI): AuditIssue[] {
 export function checkStylesheetCount($: CheerioAPI): AuditIssue[] {
   const stylesheetCount = $('link[rel="stylesheet"]').length;
 
-  if (stylesheetCount > 10) {
+  if (stylesheetCount > 12) {
     return [
       {
         id: "stylesheet-count",
@@ -185,20 +206,20 @@ export function checkStylesheetCount($: CheerioAPI): AuditIssue[] {
     ];
   }
 
-  if (stylesheetCount > 6) {
+  if (stylesheetCount > 8) {
     return [
       {
-      id: "stylesheet-count",
-      type: "performance",
-      group: "Metadata",
-      severity: "medium",
-      message: `Page loads ${stylesheetCount} stylesheet files`,
-      suggestion: "Reduce stylesheet requests or combine non-critical CSS",
+        id: "stylesheet-count",
+        type: "performance",
+        group: "Metadata",
+        severity: "medium",
+        message: `Page loads ${stylesheetCount} stylesheet files`,
+        suggestion: "Reduce stylesheet requests or combine non-critical CSS",
       },
     ];
   }
 
-  if (stylesheetCount > 4) {
+  if (stylesheetCount > 5) {
     return [
       {
         id: "stylesheet-count",

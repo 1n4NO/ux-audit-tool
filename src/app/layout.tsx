@@ -1,6 +1,7 @@
 import AppThemeProvider from "./components/AppThemeProvider";
 import ThemeToggle from "./components/ThemeToggle";
 import "./globals.css";
+import InitColorSchemeScript from "@mui/material/InitColorSchemeScript";
 import {
   AppBar,
   Box,
@@ -20,7 +21,13 @@ export default function RootLayout({
       lang="en"
       suppressHydrationWarning
     >
-      <head />
+      <head>
+        <InitColorSchemeScript
+          attribute="data"
+          defaultMode="system"
+          modeStorageKey="theme"
+        />
+      </head>
       <body>
         <AppThemeProvider>
           <AppBar

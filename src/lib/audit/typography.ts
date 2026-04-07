@@ -5,9 +5,9 @@ export function checkParagraphLength($: CheerioAPI): AuditIssue[] {
   const issues: AuditIssue[] = [];
 
   $("p").each((i, el) => {
-    const text = $(el).text();
+    const text = $(el).text().replace(/\s+/g, " ").trim();
 
-    if (text.length > 300) {
+    if (text.length > 450) {
       issues.push({
         id: `p-length-${i}`,
         type: "readability",
@@ -15,6 +15,15 @@ export function checkParagraphLength($: CheerioAPI): AuditIssue[] {
         severity: "medium",
         message: "Paragraph too long",
         suggestion: "Break text into smaller paragraphs",
+      });
+    } else if (text.length > 280) {
+      issues.push({
+        id: `p-length-${i}`,
+        type: "readability",
+        group: "Content",
+        severity: "low",
+        message: "Paragraph is getting long",
+        suggestion: "Consider splitting long paragraphs for easier scanning",
       });
     }
   });
@@ -110,7 +119,7 @@ export function checkMetaDescription($: CheerioAPI): AuditIssue[] {
       id: "meta-description",
       type: "readability",
       group: "Metadata",
-      severity: "medium",
+      severity: "low",
       message: "Page is missing a meta description",
       suggestion: "Add a concise meta description that summarizes the page",
     });
@@ -162,8 +171,9 @@ export function checkEmptyLists($: CheerioAPI): AuditIssue[] {
 export function checkPageLength($: CheerioAPI): AuditIssue[] {
   const issues: AuditIssue[] = [];
   const bodyText = $("body").text().replace(/\s+/g, " ").trim();
+  const contentBlocks = $("p, li, article, section, main").length;
 
-  if (bodyText.length > 0 && bodyText.length < 140) {
+  if (bodyText.length > 0 && bodyText.length < 90 && contentBlocks <= 2) {
     issues.push({
       id: "page-length-thin",
       type: "readability",

@@ -27,8 +27,17 @@ export function checkButtons($: CheerioAPI): AuditIssue[] {
 
   $("button").each((i, el) => {
     const text = $(el).text().trim();
+    const ariaLabel = $(el).attr("aria-label")?.trim();
+    const title = $(el).attr("title")?.trim();
+    const hasImageWithAlt = $(el)
+      .find("img")
+      .toArray()
+      .some((img) => {
+        const alt = $(img).attr("alt")?.trim();
+        return Boolean(alt);
+      });
 
-    if (!text) {
+    if (!text && !ariaLabel && !title && !hasImageWithAlt) {
       issues.push({
         id: `btn-${i}`,
         type: "accessibility",

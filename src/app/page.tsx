@@ -29,7 +29,7 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import History from "./components/History";
 import IssuesList from "./components/IssuesList";
 import ScoreCards from "./components/ScoreCards";
@@ -52,6 +52,21 @@ const AUDIT_PROGRESS_STEPS: AuditProgressState[] = [
   { label: "Running selected checks", value: 68 },
   { label: "Building audit report", value: 88 },
 ];
+const auditCheckboxSx = {
+  color: "text.secondary",
+  "&.Mui-checked": {
+    color: "primary.main",
+  },
+  "& .MuiSvgIcon-root": {
+    fontSize: 22,
+  },
+  "[data-mui-color-scheme='dark'] &": {
+    color: "#cbd5e1",
+  },
+  "[data-mui-color-scheme='dark'] &.Mui-checked": {
+    color: "#93c5fd",
+  },
+};
 
 function getStoredAuditChecks() {
   if (typeof window === "undefined") {
@@ -97,7 +112,6 @@ export default function Home() {
   const [notice, setNotice] = useState<AuditNotice | null>(null);
   const [selectedChecks, setSelectedChecks] = useState<string[]>(getStoredAuditChecks);
   const [progress, setProgress] = useState<AuditProgressState | null>(null);
-  const selectAllRef = useRef<HTMLInputElement>(null);
 
   const handleAudit = async () => {
     const trimmedUrl = url.trim();
@@ -253,12 +267,6 @@ export default function Home() {
   }, [selectedChecks]);
 
   useEffect(() => {
-    if (selectAllRef.current) {
-      selectAllRef.current.indeterminate = someChecksSelected;
-    }
-  }, [someChecksSelected]);
-
-  useEffect(() => {
     if (!loading) {
       return;
     }
@@ -328,9 +336,10 @@ export default function Home() {
                   <FormControlLabel
                     control={
                       <Checkbox
-                        inputRef={selectAllRef}
                         checked={allChecksSelected}
+                        indeterminate={someChecksSelected}
                         onChange={toggleAllChecks}
+                        sx={auditCheckboxSx}
                       />
                     }
                     label="Select all"
@@ -368,6 +377,7 @@ export default function Home() {
                               <Checkbox
                                 checked={selectedChecks.includes(check.id)}
                                 onChange={() => toggleCheck(check.id)}
+                                sx={auditCheckboxSx}
                               />
                             }
                             label={check.label}
