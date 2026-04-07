@@ -45,18 +45,78 @@ export function checkInputs($: CheerioAPI): AuditIssue[] {
   const issues: AuditIssue[] = [];
 
   $("input").each((i, el) => {
-    const hasLabel = $(el).attr("aria-label") || $(el).attr("id");
+    const type = ($(el).attr("type") || "text").toLowerCase();
 
-    if (!hasLabel) {
+    if (["hidden", "submit", "button", "reset", "image"].includes(type)) {
+      return;
+    }
+
+    const inputId = $(el).attr("id");
+    const ariaLabel = $(el).attr("aria-label")?.trim();
+    const ariaLabelledBy = $(el).attr("aria-labelledby")?.trim();
+    const wrappedByLabel = $(el).closest("label").length > 0;
+    const hasLabelFor =
+      Boolean(inputId) &&
+      $(`label[for="${inputId}"]`).toArray().some((label) => {
+        return $(label).text().trim().length > 0;
+      });
+
+    if (!ariaLabel && !ariaLabelledBy && !wrappedByLabel && !hasLabelFor) {
       issues.push({
         id: `input-${i}`,
         type: "accessibility",
         severity: "high",
         message: "Input field missing label",
-        suggestion: "Use label or aria-label for accessibility",
+        suggestion: "Use a visible label, aria-label, or aria-labelledby for accessibility",
       });
     }
   });
+
+  return issues;
+}
+
+export function checkLinks($: CheerioAPI): AuditIssue[] {
+  const issues: AuditIssue[] = [];
+
+  $("a").each((i, el) => {
+    const text = $(el).text().trim();
+    const ariaLabel = $(el).attr("aria-label")?.trim();
+    const title = $(el).attr("title")?.trim();
+    const hasImageWithAlt = $(el)
+      .find("img")
+      .toArray()
+      .some((img) => {
+        const alt = $(img).attr("alt")?.trim();
+        return Boolean(alt);
+      });
+
+    if (!text && !ariaLabel && !title && !hasImageWithAlt) {
+      issues.push({
+        id: `link-${i}`,
+        type: "accessibility",
+        severity: "medium",
+        message: "Link has no accessible name",
+        suggestion: "Add visible link text or an accessible label",
+      });
+    }
+  });
+
+  return issues;
+}
+
+export function checkDocumentLanguage($: CheerioAPI): AuditIssue[] {
+  const issues: AuditIssue[] = [];
+  const lang = $("html").attr("lang")?.trim();
+
+  if (!lang) {
+    issues.push({
+      id: "html-lang",
+      type: "accessibility",
+      severity: "medium",
+      message: "Document language is missing",
+      suggestion: "Add a lang attribute to the html element",
+    });
+  }
 
   return issues;
 }

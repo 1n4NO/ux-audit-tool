@@ -1,6 +1,6 @@
 export type AuditIssue = {
   id: string;
-  type: "accessibility" | "performance" | "readability";
+  type: "accessibility" | "readability";
   severity: "low" | "medium" | "high";
   message: string;
   suggestion: string;
@@ -11,7 +11,6 @@ export type AuditResult = {
   categories: {
     accessibility: number;
     readability: number;
-    performance: number;
   };
   issues: AuditIssue[];
 };
