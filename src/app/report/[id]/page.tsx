@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import ScoreCards from "@/app/components/ScoreCards";
 import IssuesList from "@/app/components/IssuesList";
 import { useMemo, useSyncExternalStore } from "react";
+import { getAuditCheckLabel } from "@/lib/audit/checks";
 
 function subscribeToBrowserState() {
   return () => {};
@@ -80,6 +81,26 @@ export default function ReportPage() {
 
       {/* SCORES */}
       <ScoreCards result={data} />
+      {data.selectedChecks && data.selectedChecks.length > 0 && (
+        <div className="mb-6 rounded-xl border bg-white p-4 shadow-sm dark:bg-gray-800">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold">Audit Scope</h2>
+            <span className="text-xs text-gray-500">
+              {data.selectedChecks.length} selected
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {data.selectedChecks.map((checkId) => (
+              <span
+                key={checkId}
+                className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+              >
+                {getAuditCheckLabel(checkId)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ACTIONS */}
       <div className="flex gap-3 my-6">

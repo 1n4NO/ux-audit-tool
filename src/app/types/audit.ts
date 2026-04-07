@@ -28,12 +28,14 @@ export type AuditResult = {
 export type SavedAuditReport = AuditResult & {
   id: number;
   url: string;
+  selectedChecks?: string[];
 };
 
 export type SavedAuditHistoryItem = {
   id: number;
   url: string;
   result: AuditResult;
+  selectedChecks?: string[];
 };
 
 export type AuditErrorResponse = {
@@ -87,10 +89,17 @@ export function isAuditResult(value: unknown): value is AuditResult {
 }
 
 export function isSavedAuditReport(value: unknown): value is SavedAuditReport {
+  if (!isRecord(value)) {
+    return false;
+  }
+
   return (
     isAuditResult(value) &&
     typeof value.id === "number" &&
-    typeof value.url === "string"
+    typeof value.url === "string" &&
+    (value.selectedChecks === undefined ||
+      (Array.isArray(value.selectedChecks) &&
+        value.selectedChecks.every((check) => typeof check === "string")))
   );
 }
 
@@ -102,6 +111,9 @@ export function isSavedAuditHistoryItem(value: unknown): value is SavedAuditHist
   return (
     typeof value.id === "number" &&
     typeof value.url === "string" &&
-    isAuditResult(value.result)
+    isAuditResult(value.result) &&
+    (value.selectedChecks === undefined ||
+      (Array.isArray(value.selectedChecks) &&
+        value.selectedChecks.every((check) => typeof check === "string")))
   );
 }

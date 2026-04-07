@@ -11,7 +11,11 @@ import { useEffect, useRef, useState } from "react";
 import ScoreCards from "@/app/components/ScoreCards";
 import IssuesList from "@/app/components/IssuesList";
 import History from "./components/History";
-import { AUDIT_CHECKS, AuditCheckDefinition } from "@/lib/audit/checks";
+import {
+  AUDIT_CHECKS,
+  AuditCheckDefinition,
+  getAuditCheckLabel,
+} from "@/lib/audit/checks";
 
 type AuditNotice = {
   tone: "error" | "warning";
@@ -128,7 +132,12 @@ export default function Home() {
 
       const data: AuditResult = parsed;
       const id = Date.now();
-      const savedReport: SavedAuditReport = { ...data, id, url: trimmedUrl };
+      const savedReport: SavedAuditReport = {
+        ...data,
+        id,
+        url: trimmedUrl,
+        selectedChecks,
+      };
 
       localStorage.setItem(`report-${id}`, JSON.stringify(savedReport));
 
@@ -136,6 +145,7 @@ export default function Home() {
         id,
         url: trimmedUrl,
         result: data,
+        selectedChecks,
       };
 
       const existing = JSON.parse(
@@ -349,6 +359,7 @@ export default function Home() {
       {result && (
         <section className="py-10">
           <ScoreCards result={result} />
+          <SelectedChecksSummary selectedChecks={result.selectedChecks ?? selectedChecks} />
           <IssuesList issues={result.issues} />
 
           {/* SAVE CONFIRMATION */}
@@ -416,6 +427,29 @@ function Step({ title, desc }: { title: string; desc: string }) {
     <div>
       <h3 className="font-semibold text-lg mb-2">{title}</h3>
       <p className="text-gray-600 text-sm">{desc}</p>
+    </div>
+  );
+}
+
+function SelectedChecksSummary({ selectedChecks }: { selectedChecks: string[] }) {
+  return (
+    <div className="mb-6 rounded-xl border bg-white p-4 shadow-sm dark:bg-gray-800">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold">Audit Scope</h3>
+        <span className="text-xs text-gray-500">
+          {selectedChecks.length} selected
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {selectedChecks.map((checkId) => (
+          <span
+            key={checkId}
+            className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+          >
+            {getAuditCheckLabel(checkId)}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

@@ -41,3 +41,7 @@ export const AUDIT_CHECKS: AuditCheckDefinition[] = [
 ];
 
 export const AUDIT_CHECK_IDS = AUDIT_CHECKS.map((check) => check.id);
+
+export function getAuditCheckLabel(checkId: string) {
+  return AUDIT_CHECKS.find((check) => check.id === checkId)?.label ?? checkId;
+}

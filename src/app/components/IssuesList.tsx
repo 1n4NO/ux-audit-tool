@@ -28,36 +28,47 @@ const groupOrder: IssueGroup[] = [
 ];
 
 export default function IssuesList({ issues }: { issues: AuditIssue[] }) {
-  const groupedIssues = groupOrder
-    .map((group) => ({
-      group,
-      issues: issues.filter((issue) => issue.group === group),
-    }))
-    .filter((section) => section.issues.length > 0);
+  const groupedIssues = groupOrder.map((group) => ({
+    group,
+    issues: issues.filter((issue) => issue.group === group),
+  }));
 
   return (
     <div className="space-y-6">
       {groupedIssues.map((section) => (
         <section key={section.group}>
-          <h3 className="mb-3 text-lg font-semibold">{section.group}</h3>
-          <div className="space-y-4">
-            {section.issues.map((issue) => (
-              <div
-                key={issue.id}
-                className="border rounded-xl p-4 bg-white dark:bg-gray-800 shadow-sm"
-              >
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-semibold">{issue.message}</span>
-                  <div className="flex items-center gap-2">
-                    <TypeBadge type={issue.type} />
-                    <SeverityBadge level={issue.severity} />
-                  </div>
-                </div>
-
-                <p className="text-sm text-gray-600">{issue.suggestion}</p>
-              </div>
-            ))}
+          <div className="mb-3 flex items-center justify-between gap-4">
+            <h3 className="text-lg font-semibold">{section.group}</h3>
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span>{section.issues.length} issue{section.issues.length === 1 ? "" : "s"}</span>
+              {section.issues.length > 0 && <SeveritySummary issues={section.issues} />}
+            </div>
           </div>
+
+          {section.issues.length === 0 ? (
+            <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+              No issues found in this group.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {section.issues.map((issue) => (
+                <div
+                  key={issue.id}
+                  className="border rounded-xl p-4 bg-white dark:bg-gray-800 shadow-sm"
+                >
+                  <div className="flex justify-between items-center mb-2 gap-3">
+                    <span className="font-semibold">{issue.message}</span>
+                    <div className="flex items-center gap-2">
+                      <TypeBadge type={issue.type} />
+                      <SeverityBadge level={issue.severity} />
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-gray-600">{issue.suggestion}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       ))}
     </div>
@@ -77,5 +88,25 @@ function TypeBadge({ type }: { type: IssueType }) {
     <span className={`text-xs px-2 py-1 rounded ${typeColors[type]}`}>
       {type}
     </span>
+  );
+}
+
+function SeveritySummary({ issues }: { issues: AuditIssue[] }) {
+  const counts = {
+    high: issues.filter((issue) => issue.severity === "high").length,
+    medium: issues.filter((issue) => issue.severity === "medium").length,
+    low: issues.filter((issue) => issue.severity === "low").length,
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      {counts.high > 0 && <span className="rounded bg-red-100 px-2 py-1 text-red-700">{counts.high} high</span>}
+      {counts.medium > 0 && (
+        <span className="rounded bg-yellow-100 px-2 py-1 text-yellow-700">
+          {counts.medium} medium
+        </span>
+      )}
+      {counts.low > 0 && <span className="rounded bg-green-100 px-2 py-1 text-green-700">{counts.low} low</span>}
+    </div>
   );
 }
