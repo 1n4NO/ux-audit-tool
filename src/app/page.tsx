@@ -11,6 +11,15 @@ import ScoreCards from "@/app/components/ScoreCards";
 import IssuesList from "@/app/components/IssuesList";
 import History from "./components/History";
 
+function isValidAuditUrl(value: string) {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export default function Home() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,6 +27,14 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   const handleAudit = async () => {
+    const trimmedUrl = url.trim();
+
+    if (!isValidAuditUrl(trimmedUrl)) {
+      setResult(null);
+      setError("Enter a valid URL starting with http:// or https://");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -27,7 +44,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url: trimmedUrl }),
       });
 
       if (!res.ok) {
@@ -43,13 +60,13 @@ export default function Home() {
 
       const data = (await res.json()) as AuditResult;
       const id = Date.now();
-      const savedReport: SavedAuditReport = { ...data, id, url };
+      const savedReport: SavedAuditReport = { ...data, id, url: trimmedUrl };
 
       localStorage.setItem(`report-${id}`, JSON.stringify(savedReport));
 
       const newReport: SavedAuditHistoryItem = {
         id,
-        url,
+        url: trimmedUrl,
         result: data,
       };
 
