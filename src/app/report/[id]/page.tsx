@@ -32,7 +32,29 @@ export default function ReportPage() {
     }
   }, [isClient, reportId]);
 
-  if (!data) return <p>Loading...</p>;
+  if (!isClient) {
+    return <p className="text-sm text-gray-500">Loading report...</p>;
+  }
+
+  if (!reportId || !data) {
+    return (
+      <div className="max-w-2xl">
+        <button
+          onClick={() => router.push("/")}
+          className="mb-6 text-sm text-gray-600 hover:underline"
+        >
+          ← Back to Home
+        </button>
+
+        <div className="rounded-xl border bg-white p-6 shadow dark:bg-gray-800">
+          <h1 className="text-2xl font-bold mb-2">Report not found</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            This report is missing, invalid, or unavailable in this browser.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
