@@ -11,10 +11,11 @@ import {
   Button,
   Chip,
   Paper,
+  Snackbar,
   Typography,
 } from "@mui/material";
 import { useParams, useRouter } from "next/navigation";
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import IssuesList from "@/app/components/IssuesList";
 import ScoreCards from "@/app/components/ScoreCards";
 
@@ -31,6 +32,7 @@ export default function ReportPage() {
     () => false
   );
   const reportId = Array.isArray(id) ? id[0] : id;
+  const [feedback, setFeedback] = useState<string | null>(null);
   const data = useMemo<SavedAuditReport | null>(() => {
     if (!isClient || !reportId) {
       return null;
@@ -82,6 +84,8 @@ export default function ReportPage() {
     );
   }
 
+  const exportFilename = getReportFilename(data);
+
   return (
     <Box sx={{ display: "grid", gap: 3 }}>
       <Button
@@ -129,41 +133,56 @@ export default function ReportPage() {
         </Paper>
       )}
 
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          gap: 1.5,
-        }}
-      >
-        <Button
-          variant="contained"
-          startIcon={<ContentCopyRoundedIcon />}
-          onClick={() => {
-            navigator.clipboard.writeText(window.location.href);
-            alert("Link copied!");
+      <Paper variant="outlined" sx={{ p: 2 }}>
+        <Typography variant="subtitle2" sx={{ mb: 0.75 }}>
+          Export Actions
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Copy this local report link or download the full audit payload as JSON.
+        </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            gap: 1.5,
+            alignItems: { sm: "center" },
           }}
         >
-          Copy Link
-        </Button>
+          <Button
+            variant="contained"
+            startIcon={<ContentCopyRoundedIcon />}
+            onClick={async () => {
+              await navigator.clipboard.writeText(window.location.href);
+              setFeedback("Report link copied.");
+            }}
+          >
+            Copy Link
+          </Button>
 
-        <Button
-          variant="outlined"
-          startIcon={<DownloadRoundedIcon />}
-          onClick={() => {
-            const blob = new Blob([JSON.stringify(data, null, 2)], {
-              type: "application/json",
-            });
-            const url = URL.createObjectURL(blob);
-            const anchor = document.createElement("a");
-            anchor.href = url;
-            anchor.download = "report.json";
-            anchor.click();
-          }}
-        >
-          Download
-        </Button>
-      </Box>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadRoundedIcon />}
+            onClick={() => {
+              const blob = new Blob([JSON.stringify(data, null, 2)], {
+                type: "application/json",
+              });
+              const objectUrl = URL.createObjectURL(blob);
+              const anchor = document.createElement("a");
+              anchor.href = objectUrl;
+              anchor.download = exportFilename;
+              anchor.click();
+              URL.revokeObjectURL(objectUrl);
+              setFeedback(`Downloaded ${exportFilename}`);
+            }}
+          >
+            Download JSON
+          </Button>
+
+          <Typography variant="caption" color="text.secondary">
+            Filename: {exportFilename}
+          </Typography>
+        </Box>
+      </Paper>
 
       {data.pageTitle && (
         <Alert severity="info" variant="outlined">
@@ -172,6 +191,27 @@ export default function ReportPage() {
       )}
 
       <IssuesList issues={data.issues} />
+
+      <Snackbar
+        open={Boolean(feedback)}
+        autoHideDuration={2400}
+        onClose={() => setFeedback(null)}
+        message={feedback}
+      />
     </Box>
   );
+}
+
+function getReportFilename(report: SavedAuditReport) {
+  const hostname = getHostname(report.url);
+  const timestamp = new Date(report.id).toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  return `ux-audit-${hostname}-${timestamp}.json`;
+}
+
+function getHostname(url: string) {
+  try {
+    return new URL(url).hostname.replace(/[^a-z0-9.-]/gi, "-");
+  } catch {
+    return "report";
+  }
 }

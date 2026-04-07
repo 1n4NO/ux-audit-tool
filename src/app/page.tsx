@@ -23,6 +23,7 @@ import {
   Checkbox,
   Chip,
   FormControlLabel,
+  LinearProgress,
   Paper,
   TextField,
   Typography,
@@ -39,7 +40,18 @@ type AuditNotice = {
   message: string;
 };
 
+type AuditProgressState = {
+  label: string;
+  value: number;
+};
+
 const AUDIT_CHECK_PREFERENCES_KEY = "audit-check-preferences";
+const AUDIT_PROGRESS_STEPS: AuditProgressState[] = [
+  { label: "Validating request", value: 12 },
+  { label: "Fetching page HTML", value: 36 },
+  { label: "Running selected checks", value: 68 },
+  { label: "Building audit report", value: 88 },
+];
 
 function getStoredAuditChecks() {
   if (typeof window === "undefined") {
@@ -84,6 +96,7 @@ export default function Home() {
   const [result, setResult] = useState<SavedAuditReport | null>(null);
   const [notice, setNotice] = useState<AuditNotice | null>(null);
   const [selectedChecks, setSelectedChecks] = useState<string[]>(getStoredAuditChecks);
+  const [progress, setProgress] = useState<AuditProgressState | null>(null);
   const selectAllRef = useRef<HTMLInputElement>(null);
 
   const handleAudit = async () => {
@@ -111,6 +124,7 @@ export default function Home() {
 
     setLoading(true);
     setNotice(null);
+    setProgress(AUDIT_PROGRESS_STEPS[0]);
 
     try {
       const res = await fetch("/api/audit", {
@@ -147,6 +161,7 @@ export default function Home() {
       }
 
       const data: AuditResult = parsed;
+      setProgress({ label: "Saving report locally", value: 96 });
       const id = Date.now();
       const savedReport: SavedAuditReport = {
         ...data,
@@ -174,6 +189,7 @@ export default function Home() {
       );
 
       setResult(savedReport);
+      setProgress({ label: "Audit complete", value: 100 });
     } catch {
       setResult(null);
       setNotice({
@@ -182,6 +198,9 @@ export default function Home() {
         message: "Failed to run audit. Check your connection and try again.",
       });
     } finally {
+      window.setTimeout(() => {
+        setProgress(null);
+      }, 500);
       setLoading(false);
     }
   };
@@ -238,6 +257,28 @@ export default function Home() {
       selectAllRef.current.indeterminate = someChecksSelected;
     }
   }, [someChecksSelected]);
+
+  useEffect(() => {
+    if (!loading) {
+      return;
+    }
+
+    let stepIndex = 0;
+    const interval = window.setInterval(() => {
+      stepIndex += 1;
+
+      if (stepIndex >= AUDIT_PROGRESS_STEPS.length) {
+        window.clearInterval(interval);
+        return;
+      }
+
+      setProgress(AUDIT_PROGRESS_STEPS[stepIndex]);
+    }, 700);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [loading]);
 
   return (
     <Box sx={{ display: "grid", gap: 6 }}>
@@ -348,6 +389,22 @@ export default function Home() {
             >
               {loading ? "Analyzing..." : "Run Audit"}
             </Button>
+
+            {progress && (
+              <Paper variant="outlined" sx={{ p: 2 }}>
+                <Typography variant="subtitle2" sx={{ mb: 0.75 }}>
+                  {progress.label}
+                </Typography>
+                <LinearProgress
+                  variant="determinate"
+                  value={progress.value}
+                  sx={{ height: 8, borderRadius: 999 }}
+                />
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.75, display: "block" }}>
+                  {progress.value}% complete
+                </Typography>
+              </Paper>
+            )}
 
             <Typography variant="caption" color="text.secondary">
               Use a public page URL. Results come from deterministic HTML checks, and some
