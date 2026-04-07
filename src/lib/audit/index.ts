@@ -29,38 +29,67 @@ const SEVERITY_DEDUCTION = {
   high: 20,
 } as const;
 
-function calculateCategoryScore(issues: AuditIssue[], type: AuditIssue["type"]) {
-  const totalDeduction = issues
-    .filter((issue) => issue.type === type)
-    .reduce((sum, issue) => sum + SEVERITY_DEDUCTION[issue.severity], 0);
-
-  return Math.max(0, 100 - totalDeduction);
-}
-
 type AuditCheckRunner = {
   id: string;
+  type: AuditIssue["type"];
+  maxDeduction: number;
   run: (root: CheerioAPI) => AuditIssue[];
 };
 
+type CheckResult = {
+  id: string;
+  type: AuditIssue["type"];
+  maxDeduction: number;
+  issues: AuditIssue[];
+};
+
 const CHECK_RUNNERS: AuditCheckRunner[] = [
-  { id: "images-alt", run: checkImagesAlt },
-  { id: "buttons-label", run: checkButtons },
-  { id: "inputs-label", run: checkInputs },
-  { id: "links-name", run: checkLinks },
-  { id: "document-language", run: checkDocumentLanguage },
-  { id: "links-action", run: checkBrokenActionLinks },
-  { id: "main-landmark", run: checkMainLandmark },
-  { id: "iframes-title", run: checkIframesTitle },
-  { id: "media-controls", run: checkMediaControls },
-  { id: "forms-submit", run: checkFormSubmitButtons },
-  { id: "paragraph-length", run: checkParagraphLength },
-  { id: "page-title", run: checkPageTitle },
-  { id: "heading-structure", run: checkHeadingStructure },
-  { id: "meta-description", run: checkMetaDescription },
-  { id: "heading-text", run: checkHeadingText },
-  { id: "empty-lists", run: checkEmptyLists },
-  { id: "page-length", run: checkPageLength },
+  { id: "images-alt", type: "accessibility", maxDeduction: 30, run: checkImagesAlt },
+  { id: "buttons-label", type: "accessibility", maxDeduction: 20, run: checkButtons },
+  { id: "inputs-label", type: "accessibility", maxDeduction: 30, run: checkInputs },
+  { id: "links-name", type: "accessibility", maxDeduction: 20, run: checkLinks },
+  { id: "document-language", type: "accessibility", maxDeduction: 15, run: checkDocumentLanguage },
+  { id: "links-action", type: "accessibility", maxDeduction: 20, run: checkBrokenActionLinks },
+  { id: "main-landmark", type: "accessibility", maxDeduction: 20, run: checkMainLandmark },
+  { id: "iframes-title", type: "accessibility", maxDeduction: 30, run: checkIframesTitle },
+  { id: "media-controls", type: "accessibility", maxDeduction: 20, run: checkMediaControls },
+  { id: "forms-submit", type: "accessibility", maxDeduction: 20, run: checkFormSubmitButtons },
+  { id: "paragraph-length", type: "readability", maxDeduction: 20, run: checkParagraphLength },
+  { id: "page-title", type: "readability", maxDeduction: 30, run: checkPageTitle },
+  { id: "heading-structure", type: "readability", maxDeduction: 25, run: checkHeadingStructure },
+  { id: "meta-description", type: "readability", maxDeduction: 20, run: checkMetaDescription },
+  { id: "heading-text", type: "readability", maxDeduction: 20, run: checkHeadingText },
+  { id: "empty-lists", type: "readability", maxDeduction: 10, run: checkEmptyLists },
+  { id: "page-length", type: "readability", maxDeduction: 10, run: checkPageLength },
 ];
+
+function calculateCheckDeduction(issues: AuditIssue[], maxDeduction: number) {
+  const totalDeduction = issues.reduce(
+    (sum, issue) => sum + SEVERITY_DEDUCTION[issue.severity],
+    0
+  );
+
+  return Math.min(totalDeduction, maxDeduction);
+}
+
+function calculateCategoryScore(results: CheckResult[], type: AuditIssue["type"]) {
+  const categoryResults = results.filter((result) => result.type === type);
+
+  if (categoryResults.length === 0) {
+    return null;
+  }
+
+  const maxDeduction = categoryResults.reduce(
+    (sum, result) => sum + result.maxDeduction,
+    0
+  );
+  const actualDeduction = categoryResults.reduce(
+    (sum, result) => sum + calculateCheckDeduction(result.issues, result.maxDeduction),
+    0
+  );
+
+  return Math.max(0, Math.round(100 - (actualDeduction / maxDeduction) * 100));
+}
 
 export async function runAudit(
   $: CheerioAPI,
@@ -69,26 +98,40 @@ export async function runAudit(
   const enabledChecks = new Set(
     selectedChecks.filter((checkId) => AUDIT_CHECK_IDS.includes(checkId))
   );
-  const issues = CHECK_RUNNERS.flatMap((check) => {
+  const results = CHECK_RUNNERS.flatMap<CheckResult>((check) => {
     if (!enabledChecks.has(check.id)) {
       return [];
     }
 
-    return check.run($);
+    return [
+      {
+        id: check.id,
+        type: check.type,
+        maxDeduction: check.maxDeduction,
+        issues: check.run($),
+      },
+    ];
   });
+  const issues = results.flatMap((result) => result.issues);
 
-  const accessibilityScore = calculateCategoryScore(issues, "accessibility");
-  const readabilityScore = calculateCategoryScore(issues, "readability");
-
-  const score = Math.round(
-    (accessibilityScore + readabilityScore) / 2
+  const accessibilityScore = calculateCategoryScore(results, "accessibility");
+  const readabilityScore = calculateCategoryScore(results, "readability");
+  const categoryScores = [accessibilityScore, readabilityScore].filter(
+    (value): value is number => value !== null
   );
+
+  const score =
+    categoryScores.length > 0
+      ? Math.round(
+          categoryScores.reduce((sum, value) => sum + value, 0) / categoryScores.length
+        )
+      : 100;
 
   return {
     score,
     categories: {
-      accessibility: accessibilityScore,
-      readability: readabilityScore,
+      accessibility: accessibilityScore ?? 100,
+      readability: readabilityScore ?? 100,
     },
     issues,
   };
