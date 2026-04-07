@@ -1,6 +1,11 @@
 "use client";
 
-import { AuditResult, SavedAuditHistoryItem, SavedAuditReport } from "@/app/types/audit";
+import {
+  AuditErrorResponse,
+  AuditResult,
+  SavedAuditHistoryItem,
+  SavedAuditReport,
+} from "@/app/types/audit";
 import { useState } from "react";
 import ScoreCards from "@/app/components/ScoreCards";
 import IssuesList from "@/app/components/IssuesList";
@@ -10,17 +15,29 @@ export default function Home() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SavedAuditReport | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleAudit = async () => {
     setLoading(true);
+    setError(null);
 
     try {
       const res = await fetch("/api/audit", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ url }),
       });
 
       if (!res.ok) {
+        const errorData = (await res.json()) as AuditErrorResponse;
+        setResult(null);
+        setError(
+          errorData.suggestion
+            ? `${errorData.error}. ${errorData.suggestion}`
+            : errorData.error
+        );
         return;
       }
 
@@ -46,6 +63,9 @@ export default function Home() {
       );
 
       setResult(savedReport);
+    } catch {
+      setResult(null);
+      setError("Failed to run audit. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -73,10 +93,17 @@ export default function Home() {
 
           <button
             onClick={handleAudit}
+            disabled={loading}
             className="w-full bg-black text-white py-3 rounded"
           >
             {loading ? "Analyzing..." : "Run Audit"}
           </button>
+
+          {error && (
+            <p className="mt-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </p>
+          )}
         </div>
       </section>
 
