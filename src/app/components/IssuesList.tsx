@@ -2,11 +2,18 @@ import { AuditIssue } from "@/app/types/audit";
 
 type SeverityLevel = AuditIssue["severity"];
 type IssueGroup = AuditIssue["group"];
+type IssueType = AuditIssue["type"];
 
 const colors: Record<SeverityLevel, string> = {
   low: "bg-green-100 text-green-700",
   medium: "bg-yellow-100 text-yellow-700",
   high: "bg-red-100 text-red-700",
+};
+
+const typeColors: Record<IssueType, string> = {
+  accessibility: "bg-blue-100 text-blue-700",
+  readability: "bg-slate-100 text-slate-700",
+  performance: "bg-purple-100 text-purple-700",
 };
 
 const groupOrder: IssueGroup[] = [
@@ -41,7 +48,10 @@ export default function IssuesList({ issues }: { issues: AuditIssue[] }) {
               >
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-semibold">{issue.message}</span>
-                  <SeverityBadge level={issue.severity} />
+                  <div className="flex items-center gap-2">
+                    <TypeBadge type={issue.type} />
+                    <SeverityBadge level={issue.severity} />
+                  </div>
                 </div>
 
                 <p className="text-sm text-gray-600">{issue.suggestion}</p>
@@ -58,6 +68,14 @@ function SeverityBadge({ level }: { level: SeverityLevel }) {
   return (
     <span className={`text-xs px-2 py-1 rounded ${colors[level]}`}>
       {level.toUpperCase()}
+    </span>
+  );
+}
+
+function TypeBadge({ type }: { type: IssueType }) {
+  return (
+    <span className={`text-xs px-2 py-1 rounded ${typeColors[type]}`}>
+      {type}
     </span>
   );
 }

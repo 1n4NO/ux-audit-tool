@@ -19,6 +19,14 @@ import {
   checkEmptyLists,
   checkPageLength,
 } from "./typography";
+import {
+  checkRenderBlockingScripts,
+  checkLargeDomSize,
+  checkLazyLoadedImages,
+  checkImageDimensions,
+  checkLazyLoadedIframes,
+  checkStylesheetCount,
+} from "./performance";
 import { AuditIssue, AuditResult } from "@/app/types/audit";
 import { CheerioAPI } from "cheerio";
 import { AUDIT_CHECK_IDS } from "./checks";
@@ -61,6 +69,12 @@ const CHECK_RUNNERS: AuditCheckRunner[] = [
   { id: "heading-text", type: "readability", maxDeduction: 20, run: checkHeadingText },
   { id: "empty-lists", type: "readability", maxDeduction: 10, run: checkEmptyLists },
   { id: "page-length", type: "readability", maxDeduction: 10, run: checkPageLength },
+  { id: "render-blocking-scripts", type: "performance", maxDeduction: 30, run: checkRenderBlockingScripts },
+  { id: "dom-size", type: "performance", maxDeduction: 25, run: checkLargeDomSize },
+  { id: "images-lazy-loading", type: "performance", maxDeduction: 25, run: checkLazyLoadedImages },
+  { id: "image-dimensions", type: "performance", maxDeduction: 25, run: checkImageDimensions },
+  { id: "iframes-lazy-loading", type: "performance", maxDeduction: 20, run: checkLazyLoadedIframes },
+  { id: "stylesheet-count", type: "performance", maxDeduction: 20, run: checkStylesheetCount },
 ];
 
 function calculateCheckDeduction(issues: AuditIssue[], maxDeduction: number) {
@@ -116,7 +130,8 @@ export async function runAudit(
 
   const accessibilityScore = calculateCategoryScore(results, "accessibility");
   const readabilityScore = calculateCategoryScore(results, "readability");
-  const categoryScores = [accessibilityScore, readabilityScore].filter(
+  const performanceScore = calculateCategoryScore(results, "performance");
+  const categoryScores = [accessibilityScore, readabilityScore, performanceScore].filter(
     (value): value is number => value !== null
   );
 
@@ -132,6 +147,7 @@ export async function runAudit(
     categories: {
       accessibility: accessibilityScore ?? 100,
       readability: readabilityScore ?? 100,
+      performance: performanceScore ?? 100,
     },
     issues,
   };

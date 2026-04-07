@@ -1,6 +1,6 @@
 export type AuditIssue = {
   id: string;
-  type: "accessibility" | "readability";
+  type: "accessibility" | "readability" | "performance";
   group:
     | "Document"
     | "Forms"
@@ -20,6 +20,7 @@ export type AuditResult = {
   categories: {
     accessibility: number;
     readability: number;
+    performance: number;
   };
   issues: AuditIssue[];
 };
@@ -52,7 +53,9 @@ export function isAuditIssue(value: unknown): value is AuditIssue {
 
   return (
     typeof value.id === "string" &&
-    (value.type === "accessibility" || value.type === "readability") &&
+    (value.type === "accessibility" ||
+      value.type === "readability" ||
+      value.type === "performance") &&
     [
       "Document",
       "Forms",
@@ -78,6 +81,7 @@ export function isAuditResult(value: unknown): value is AuditResult {
     typeof value.score === "number" &&
     typeof value.categories.accessibility === "number" &&
     typeof value.categories.readability === "number" &&
+    typeof value.categories.performance === "number" &&
     value.issues.every(isAuditIssue)
   );
 }

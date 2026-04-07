@@ -32,6 +32,12 @@ export const AUDIT_CHECKS: AuditCheckDefinition[] = [
   { id: "heading-text", label: "Empty headings", group: "Headings" },
   { id: "empty-lists", label: "Empty lists", group: "Content" },
   { id: "page-length", label: "Very thin page content", group: "Content" },
+  { id: "render-blocking-scripts", label: "Render-blocking scripts", group: "Document" },
+  { id: "dom-size", label: "Large DOM size", group: "Document" },
+  { id: "images-lazy-loading", label: "Offscreen images without lazy loading", group: "Images" },
+  { id: "image-dimensions", label: "Images missing dimensions", group: "Images" },
+  { id: "iframes-lazy-loading", label: "Iframes without lazy loading", group: "Media" },
+  { id: "stylesheet-count", label: "Too many stylesheet files", group: "Metadata" },
 ];
 
 export const AUDIT_CHECK_IDS = AUDIT_CHECKS.map((check) => check.id);

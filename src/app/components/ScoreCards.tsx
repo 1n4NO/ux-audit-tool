@@ -4,10 +4,11 @@ export default function ScoreCards({ result }: { result: AuditResult }) {
   const { score, categories } = result;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
       <Card title="Overall" value={score} />
       <Card title="Accessibility" value={categories.accessibility} />
       <Card title="Readability" value={categories.readability} />
+      <Card title="Performance" value={categories.performance} />
     </div>
   );
 }

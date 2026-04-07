@@ -7,7 +7,7 @@ import {
   SavedAuditHistoryItem,
   SavedAuditReport,
 } from "@/app/types/audit";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ScoreCards from "@/app/components/ScoreCards";
 import IssuesList from "@/app/components/IssuesList";
 import History from "./components/History";
@@ -18,6 +18,36 @@ type AuditNotice = {
   title: string;
   message: string;
 };
+
+const AUDIT_CHECK_PREFERENCES_KEY = "audit-check-preferences";
+
+function getStoredAuditChecks() {
+  if (typeof window === "undefined") {
+    return AUDIT_CHECKS.map((check) => check.id);
+  }
+
+  try {
+    const parsed = JSON.parse(
+      localStorage.getItem(AUDIT_CHECK_PREFERENCES_KEY) || "[]"
+    ) as unknown;
+
+    if (!Array.isArray(parsed)) {
+      return AUDIT_CHECKS.map((check) => check.id);
+    }
+
+    const validChecks = parsed.filter(
+      (check): check is string =>
+        typeof check === "string" &&
+        AUDIT_CHECKS.some((availableCheck) => availableCheck.id === check)
+    );
+
+    return validChecks.length > 0
+      ? validChecks
+      : AUDIT_CHECKS.map((check) => check.id);
+  } catch {
+    return AUDIT_CHECKS.map((check) => check.id);
+  }
+}
 
 function isValidAuditUrl(value: string) {
   try {
@@ -33,9 +63,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SavedAuditReport | null>(null);
   const [notice, setNotice] = useState<AuditNotice | null>(null);
-  const [selectedChecks, setSelectedChecks] = useState<string[]>(
-    AUDIT_CHECKS.map((check) => check.id)
-  );
+  const [selectedChecks, setSelectedChecks] = useState<string[]>(getStoredAuditChecks);
+  const selectAllRef = useRef<HTMLInputElement>(null);
 
   const handleAudit = async () => {
     const trimmedUrl = url.trim();
@@ -132,6 +161,7 @@ export default function Home() {
   };
 
   const allChecksSelected = selectedChecks.length === AUDIT_CHECKS.length;
+  const someChecksSelected = selectedChecks.length > 0 && !allChecksSelected;
   const checksByGroup = AUDIT_CHECKS.reduce<Record<string, AuditCheckDefinition[]>>(
     (groups, check) => {
       groups[check.group] ??= [];
@@ -151,9 +181,37 @@ export default function Home() {
     });
   };
 
+  const toggleGroupChecks = (checks: AuditCheckDefinition[]) => {
+    const checkIds = checks.map((check) => check.id);
+    const allGroupChecksSelected = checkIds.every((checkId) =>
+      selectedChecks.includes(checkId)
+    );
+
+    setSelectedChecks((current) => {
+      if (allGroupChecksSelected) {
+        return current.filter((checkId) => !checkIds.includes(checkId));
+      }
+
+      return Array.from(new Set([...current, ...checkIds]));
+    });
+  };
+
   const toggleAllChecks = () => {
     setSelectedChecks(allChecksSelected ? [] : AUDIT_CHECKS.map((check) => check.id));
   };
+
+  useEffect(() => {
+    localStorage.setItem(
+      AUDIT_CHECK_PREFERENCES_KEY,
+      JSON.stringify(selectedChecks)
+    );
+  }, [selectedChecks]);
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someChecksSelected;
+    }
+  }, [someChecksSelected]);
 
   return (
     <div>
@@ -191,6 +249,7 @@ export default function Home() {
             <div className="border-t px-4 py-3 text-left">
               <label className="mb-3 flex items-center gap-2 text-sm font-medium">
                 <input
+                  ref={selectAllRef}
                   type="checkbox"
                   checked={allChecksSelected}
                   onChange={toggleAllChecks}
@@ -201,9 +260,20 @@ export default function Home() {
               <div className="space-y-4">
                 {Object.entries(checksByGroup).map(([group, checks]) => (
                   <div key={group}>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                      {group}
-                    </p>
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        {group}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => toggleGroupChecks(checks)}
+                        className="text-xs text-gray-500 underline"
+                      >
+                        {checks.every((check) => selectedChecks.includes(check.id))
+                          ? "Clear group"
+                          : "Select group"}
+                      </button>
+                    </div>
                     <div className="space-y-2">
                       {checks.map((check) => (
                         <label key={check.id} className="flex items-start gap-2 text-sm">
