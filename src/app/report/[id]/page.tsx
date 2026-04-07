@@ -1,21 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { SavedAuditReport } from "@/app/types/audit";
 import { useParams, useRouter } from "next/navigation";
 import ScoreCards from "@/app/components/ScoreCards";
 import IssuesList from "@/app/components/IssuesList";
+import { useMemo, useSyncExternalStore } from "react";
+
+function subscribeToBrowserState() {
+  return () => {};
+}
 
 export default function ReportPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [data, setData] = useState<any>(null);
-
-  useEffect(() => {
-    const saved = localStorage.getItem(`report-${id}`);
-    if (saved) {
-      setData(JSON.parse(saved));
+  const isClient = useSyncExternalStore(
+    subscribeToBrowserState,
+    () => true,
+    () => false
+  );
+  const reportId = Array.isArray(id) ? id[0] : id;
+  const data = useMemo<SavedAuditReport | null>(() => {
+    if (!isClient || !reportId) {
+      return null;
     }
-  }, [id]);
+
+    try {
+      const saved = localStorage.getItem(`report-${reportId}`);
+      return saved ? (JSON.parse(saved) as SavedAuditReport) : null;
+    } catch {
+      return null;
+    }
+  }, [isClient, reportId]);
 
   if (!data) return <p>Loading...</p>;
 

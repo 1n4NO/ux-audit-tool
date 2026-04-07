@@ -1,26 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+
+function subscribeToBrowserState() {
+  return () => {};
+}
+
+function getInitialTheme(): "light" | "dark" {
+  if (typeof window === "undefined") {
+    return "light";
+  }
+
+  const storedTheme = localStorage.getItem("theme");
+
+  if (storedTheme === "light" || storedTheme === "dark") {
+    return storedTheme;
+  }
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
 
 export default function ThemeToggle() {
-  const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const isClient = useSyncExternalStore(
+    subscribeToBrowserState,
+    () => true,
+    () => false
+  );
+  const [theme, setTheme] = useState<"light" | "dark">(getInitialTheme);
 
-  // Prevent hydration mismatch
   useEffect(() => {
-    setMounted(true);
-
-    const storedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-
-    if (storedTheme) {
-      setTheme(storedTheme);
-      document.documentElement.classList.toggle("dark", storedTheme === "dark");
-    } else {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      setTheme(prefersDark ? "dark" : "light");
-      document.documentElement.classList.toggle("dark", prefersDark);
+    if (!isClient) {
+      return;
     }
-  }, []);
+
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }, [isClient, theme]);
 
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
@@ -30,8 +44,7 @@ export default function ThemeToggle() {
     document.documentElement.classList.toggle("dark", newTheme === "dark");
   };
 
-  // Avoid hydration flicker
-  if (!mounted) return null;
+  if (!isClient) return null;
 
   return (
     <button

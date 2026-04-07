@@ -1,5 +1,6 @@
 "use client";
 
+import { AuditResult, SavedAuditHistoryItem, SavedAuditReport } from "@/app/types/audit";
 import { useState } from "react";
 import ScoreCards from "@/app/components/ScoreCards";
 import IssuesList from "@/app/components/IssuesList";
@@ -8,40 +9,46 @@ import History from "./components/History";
 export default function Home() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<SavedAuditReport | null>(null);
 
   const handleAudit = async () => {
     setLoading(true);
 
-    const res = await fetch("/api/audit", {
-      method: "POST",
-      body: JSON.stringify({ url }),
-    });
+    try {
+      const res = await fetch("/api/audit", {
+        method: "POST",
+        body: JSON.stringify({ url }),
+      });
 
-    const data = await res.json();
+      if (!res.ok) {
+        return;
+      }
 
-    const id = Date.now();
+      const data = (await res.json()) as AuditResult;
+      const id = Date.now();
+      const savedReport: SavedAuditReport = { ...data, id, url };
 
-    localStorage.setItem(
-      `report-${id}`,
-      JSON.stringify({ ...data, url })
-    );
+      localStorage.setItem(`report-${id}`, JSON.stringify(savedReport));
 
-    const newReport = {
-      id,
-      url,
-      result: data,
-    };
+      const newReport: SavedAuditHistoryItem = {
+        id,
+        url,
+        result: data,
+      };
 
-    const existing = JSON.parse(localStorage.getItem("reports") || "[]");
+      const existing = JSON.parse(
+        localStorage.getItem("reports") || "[]"
+      ) as SavedAuditHistoryItem[];
 
-    localStorage.setItem(
-      "reports",
-      JSON.stringify([newReport, ...existing].slice(0, 10)) // keep last 10
-    );
+      localStorage.setItem(
+        "reports",
+        JSON.stringify([newReport, ...existing].slice(0, 10))
+      );
 
-    setResult({ ...data, id, url });
-    setLoading(false);
+      setResult(savedReport);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -140,7 +147,7 @@ export default function Home() {
   );
 }
 
-function Feature({ title, desc }: any) {
+function Feature({ title, desc }: { title: string; desc: string }) {
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded shadow">
       <h3 className="font-semibold mb-2">{title}</h3>
@@ -149,7 +156,7 @@ function Feature({ title, desc }: any) {
   );
 }
 
-function Step({ title, desc }: any) {
+function Step({ title, desc }: { title: string; desc: string }) {
   return (
     <div>
       <h3 className="font-semibold text-lg mb-2">{title}</h3>

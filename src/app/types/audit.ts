@@ -14,3 +14,20 @@ export type AuditResult = {
   };
   issues: AuditIssue[];
 };
+
+export type SavedAuditReport = AuditResult & {
+  id: number;
+  url: string;
+};
+
+export type SavedAuditHistoryItem = {
+  id: number;
+  url: string;
+  result: AuditResult;
+};
+
+export type AuditErrorResponse = {
+  error: string;
+  suggestion?: string;
+  details?: string;
+};
