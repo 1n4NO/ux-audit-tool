@@ -222,7 +222,7 @@ export default function Home() {
           UX Audit Engine
         </h1>
         <p className="text-gray-600 mb-6">
-          Analyze any website for UX & accessibility issues
+          Run grouped accessibility, readability, and performance audits on public page URLs
         </p>
 
         <div className="max-w-xl mx-auto bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
@@ -301,7 +301,7 @@ export default function Home() {
           </button>
 
           <p className="mt-3 text-xs text-gray-500">
-            Use a public page URL. Some sites may block automated access or time out.
+            Use a public page URL. Results come from deterministic HTML checks, and some sites may block automated access or time out.
           </p>
 
           {notice && (
@@ -326,9 +326,9 @@ export default function Home() {
         </h2>
 
         <div className="grid md:grid-cols-3 gap-6">
-          <Feature title="Accessibility" desc="Detect UX issues" />
-          <Feature title="Insights" desc="Actionable suggestions" />
-          <Feature title="Scoring" desc="Understand quality instantly" />
+          <Feature title="Selective Audits" desc="Choose the exact checks you want to run" />
+          <Feature title="Grouped Reports" desc="Review findings by document, forms, links, media, and more" />
+          <Feature title="Normalized Scores" desc="Compare enabled categories without a fake baseline" />
         </div>
       </section>
 
@@ -339,9 +339,9 @@ export default function Home() {
         </h2>
 
         <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-6 text-center">
-          <Step title="1. Enter URL" desc="Paste any website link" />
-          <Step title="2. Analyze" desc="We scan for UX issues" />
-          <Step title="3. Improve" desc="Get actionable insights" />
+          <Step title="1. Enter URL" desc="Paste a public page URL" />
+          <Step title="2. Select Checks" desc="Choose accessibility, readability, and performance rules" />
+          <Step title="3. Review Report" desc="Inspect grouped findings and category scores" />
         </div>
       </section>
 
@@ -368,10 +368,10 @@ export default function Home() {
       {/* 🎯 CTA */}
       <section className="text-center py-20 px-6">
         <h2 className="text-3xl font-bold mb-4">
-          Start improving your UX today
+          Audit real pages with targeted checks
         </h2>
         <p className="text-gray-600 mb-6">
-          Run a free audit in seconds
+          Start with deterministic heuristics, then iterate toward deeper audits
         </p>
 
         <button

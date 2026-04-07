@@ -1,220 +1,92 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/1n4NO/ux-audit-tool/main/banner.png" />
-</p>
+# UX Audit Engine
 
-# 🚀 UX Audit Engine
-### Automated UX & Accessibility Analysis for Modern Websites
+Heuristic website auditing for accessibility, readability, and performance.
 
-> Analyze any website in seconds. Detect UX issues, accessibility gaps, and usability flaws — with actionable insights.
+This project analyzes a public page URL, fetches its HTML, parses the DOM with Cheerio, and applies deterministic checks to produce a grouped report with category scores and actionable suggestions.
 
----
+## What It Does
 
-## 🌐 Live Demo
-👉 _Coming soon (will be deployed on Vercel)_
+- Runs grouped audits across `accessibility`, `readability`, and `performance`
+- Lets you choose exactly which checks to run before each audit
+- Scores only the enabled categories and normalizes results against the selected checks
+- Groups findings by concern area such as `Document`, `Forms`, `Headings`, `Images`, and `Media`
+- Stores recent audits and report pages locally in the browser with `localStorage`
 
----
+## Current Audit Coverage
 
-## 📦 Repository
+### Accessibility
+- Images missing `alt` text
+- Buttons without labels
+- Inputs missing accessible labels
+- Links without accessible names
+- Missing document language
+- Non-navigational links like `href="#"` or `javascript:`
+- Missing `main` landmark
+- Iframes without titles
+- Audio/video without controls
+- Forms without submit controls
 
-🔗 https://github.com/1n4NO/ux-audit-tool
+### Readability
+- Missing page title
+- Missing meta description
+- Missing, multiple, or skipped headings
+- Empty headings
+- Overly long paragraphs
+- Empty lists
+- Very thin page content
 
----
+### Performance
+- Render-blocking scripts in `<head>`
+- Large DOM size
+- Non-critical images without lazy loading
+- Images missing explicit dimensions
+- Iframes without lazy loading
+- Excessive stylesheet count
 
-## 🧠 Overview
+## Important Constraints
 
-**UX Audit Engine** is a heuristic-based website analysis tool that programmatically evaluates user experience and accessibility without relying on paid AI APIs.
+- This is deterministic heuristic analysis, not a browser-runtime audit engine
+- It fetches server-rendered HTML only, so JavaScript-heavy pages may produce incomplete results
+- Reports are stored locally in the browser; report URLs are not shareable across devices or browsers
+- Performance checks are HTML-level heuristics, not full Lighthouse-style runtime measurements
 
-It scans a given URL, parses the DOM, and applies deterministic rules inspired by industry standards like WCAG to generate:
+## Architecture
 
-- 📊 UX Score
-- 🚨 Issue Breakdown
-- 💡 Actionable Recommendations
-- 🔗 Shareable Reports
-
----
-
-## ✨ Features
-
-### 🔍 Automated UX Analysis
-- Analyze any website via URL
-- Detect usability issues directly from DOM structure
-
-### ♿ Accessibility Checks
-- Missing `alt` attributes on images
-- Inputs without labels
-- Buttons without descriptive text
-
-### 📖 Readability Insights
-- Long paragraph detection
-- Content structure issues
-
-### 📊 Smart Scoring System
-- Category-based scoring:
-  - Accessibility
-  - Readability
-  - Performance (basic)
-
-### 💾 Persistent Reports
-- Saves audit history locally using `localStorage`
-
-### 🔗 Shareable Reports
-- Unique report URLs (`/report/[id]`)
-- Easily share insights with others
-
----
-
-## 🖼️ Screenshots
-
-> _Add screenshots here (Landing Page, Results, History, Report Page)_
-
----
-
-## 🏗️ Architecture
-
-```js
-Client (Next.js App Router)
-↓
-API Route (/api/audit)
-↓
-HTML Fetch (axios)
-↓
-DOM Parsing (cheerio)
-↓
-Audit Engine (custom rules)
-↓
-Structured Report (JSON)
+```text
+Next.js App Router UI
+-> /api/audit
+-> axios fetch
+-> cheerio DOM parse
+-> heuristic audit checks
+-> normalized category scores + grouped issues
 ```
 
----
+## Scoring Model
 
-## 🧩 Tech Stack
+- Checks are grouped into `accessibility`, `readability`, and `performance`
+- Each check has a deduction budget
+- Issue severity contributes weighted deductions
+- Each category score is normalized against the checks that were actually enabled
+- Overall score is the average of the enabled category scores
 
-- **Frontend:** Next.js (App Router), React, Tailwind CSS  
-- **Backend:** Vercel Serverless Functions  
-- **Parsing Engine:** Cheerio  
-- **Data Fetching:** Axios  
-- **Storage:** LocalStorage  
-- **Deployment:** Vercel (planned)
+## Tech Stack
 
----
+- Next.js 16
+- React 19
+- Tailwind CSS 4
+- Axios
+- Cheerio
+- TypeScript
 
-## ⚙️ How It Works
+## Local Development
 
-1. Enter a website URL  
-2. Server fetches HTML content  
-3. DOM is parsed using Cheerio  
-4. Audit rules are applied:
-   - Accessibility checks
-   - Typography checks
-   - Structural heuristics  
-5. Issues are aggregated and scored  
-6. Results are displayed with actionable insights  
-
----
-
-## 🧠 Audit Engine Philosophy
-
-Instead of relying on AI, this project uses a **deterministic heuristic engine**.
-
-```ts
-if (!img.alt) {
-  issues.push("Missing alt text");
-}
-```
-
-## Why this approach?
-✅ Predictable results
-✅ Zero API cost
-✅ High performance
-✅ No hallucinations
-📊 Scoring Logic
-Accessibility → -5 per issue
-Readability → -3 per issue
-Performance → baseline (extensible)
-
-Final Score = Average of all categories
-
-## 📁 Project Structure
-
-```js
-/app
-/api/audit        → Audit API
-/report/[id]      → Shareable report page
-/page.tsx         → Landing page
-
-/components
-ScoreCards.tsx
-IssuesList.tsx
-History.tsx
-
-/lib/audit
-accessibility.ts
-typography.ts
-index.ts
-
-/types
-audit.ts
-
-```
-
-
-# 🚀 Getting Started
-
-## 1. Clone the repository
-```js
-git clone https://github.com/1n4NO/ux-audit-tool.git
-cd ux-audit-tool
-```
-## 2. Install dependencies
-```js
+```bash
 npm install
-```
-## 3. Run locally
-```js 
 npm run dev
 ```
-# 🌍 Deployment
 
-This project will be deployed on Vercel.
+Then open `http://localhost:3000`.
 
-```js 
-vercel deploy
-```
+## Current Product Positioning
 
-### 👉 Live link will be added soon
-
-# 🧨 Future Enhancements
-
-### 🔥 WCAG contrast ratio analysis
-### 🔥 Puppeteer support for JS-heavy websites
-### 🔥 Authentication (user-based reports)
-### 🔥 Chrome Extension (“Audit this page”)
-### 🔥 Export reports (PDF)
-### 🔥 Dark mode
-
-
-## 🎯 Why This Project Matters
-
-### Most UX tools:
- Require manual audits
- Are expensive
- Depend heavily on AI
-
-#### UX Audit Engine proves that powerful developer tools can be built using deterministic logic and strong frontend engineering.
-
-## 🧑‍💻 Author
-
-### Pratik Singh
-### Frontend Architect | React | Performance | Scalable Systems
-
-## 📄 License
-
-### MIT License
-
-# ⭐ Support
-
-If you like this project:
-
-#### ⭐ Star the repo
-#### 🍴 Fork it
-#### 🧠 Share feedback
+This tool sits closer to a lightweight combined UX heuristic auditor than to full Axe DevTools or Lighthouse parity. It already supports grouped accessibility, readability, and performance checks, but it does not yet run browser-based runtime audits.
