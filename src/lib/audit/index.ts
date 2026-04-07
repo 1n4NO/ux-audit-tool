@@ -4,11 +4,20 @@ import {
   checkInputs,
   checkLinks,
   checkDocumentLanguage,
+  checkBrokenActionLinks,
+  checkMainLandmark,
+  checkIframesTitle,
+  checkMediaControls,
+  checkFormSubmitButtons,
 } from "./accessibility";
 import {
   checkParagraphLength,
   checkPageTitle,
   checkHeadingStructure,
+  checkMetaDescription,
+  checkHeadingText,
+  checkEmptyLists,
+  checkPageLength,
 } from "./typography";
 import { AuditIssue, AuditResult } from "@/app/types/audit";
 import { CheerioAPI } from "cheerio";
@@ -34,9 +43,18 @@ export async function runAudit($: CheerioAPI): Promise<AuditResult> {
     ...checkInputs($),
     ...checkLinks($),
     ...checkDocumentLanguage($),
+    ...checkBrokenActionLinks($),
+    ...checkMainLandmark($),
+    ...checkIframesTitle($),
+    ...checkMediaControls($),
+    ...checkFormSubmitButtons($),
     ...checkParagraphLength($),
     ...checkPageTitle($),
     ...checkHeadingStructure($),
+    ...checkMetaDescription($),
+    ...checkHeadingText($),
+    ...checkEmptyLists($),
+    ...checkPageLength($),
   ];
 
   const accessibilityScore = calculateCategoryScore(issues, "accessibility");

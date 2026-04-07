@@ -1,6 +1,6 @@
 "use client";
 
-import { SavedAuditReport } from "@/app/types/audit";
+import { isSavedAuditReport, SavedAuditReport } from "@/app/types/audit";
 import { useParams, useRouter } from "next/navigation";
 import ScoreCards from "@/app/components/ScoreCards";
 import IssuesList from "@/app/components/IssuesList";
@@ -26,7 +26,12 @@ export default function ReportPage() {
 
     try {
       const saved = localStorage.getItem(`report-${reportId}`);
-      return saved ? (JSON.parse(saved) as SavedAuditReport) : null;
+      if (!saved) {
+        return null;
+      }
+
+      const parsed = JSON.parse(saved) as unknown;
+      return isSavedAuditReport(parsed) ? parsed : null;
     } catch {
       return null;
     }

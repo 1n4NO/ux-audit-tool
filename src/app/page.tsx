@@ -3,6 +3,7 @@
 import {
   AuditErrorResponse,
   AuditResult,
+  isAuditResult,
   SavedAuditHistoryItem,
   SavedAuditReport,
 } from "@/app/types/audit";
@@ -10,6 +11,12 @@ import { useState } from "react";
 import ScoreCards from "@/app/components/ScoreCards";
 import IssuesList from "@/app/components/IssuesList";
 import History from "./components/History";
+
+type AuditNotice = {
+  tone: "error" | "warning";
+  title: string;
+  message: string;
+};
 
 function isValidAuditUrl(value: string) {
   try {
@@ -24,19 +31,23 @@ export default function Home() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SavedAuditReport | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<AuditNotice | null>(null);
 
   const handleAudit = async () => {
     const trimmedUrl = url.trim();
 
     if (!isValidAuditUrl(trimmedUrl)) {
       setResult(null);
-      setError("Enter a valid URL starting with http:// or https://");
+      setNotice({
+        tone: "warning",
+        title: "Invalid URL",
+        message: "Enter a valid URL starting with http:// or https://",
+      });
       return;
     }
 
     setLoading(true);
-    setError(null);
+    setNotice(null);
 
     try {
       const res = await fetch("/api/audit", {
@@ -50,15 +61,29 @@ export default function Home() {
       if (!res.ok) {
         const errorData = (await res.json()) as AuditErrorResponse;
         setResult(null);
-        setError(
-          errorData.suggestion
+        setNotice({
+          tone: "error",
+          title: getErrorTitle(res.status),
+          message: errorData.suggestion
             ? `${errorData.error}. ${errorData.suggestion}`
-            : errorData.error
-        );
+            : errorData.error,
+        });
         return;
       }
 
-      const data = (await res.json()) as AuditResult;
+      const parsed = (await res.json()) as unknown;
+
+      if (!isAuditResult(parsed)) {
+        setResult(null);
+        setNotice({
+          tone: "error",
+          title: "Unexpected response",
+          message: "The audit completed, but the response format was invalid. Please try again.",
+        });
+        return;
+      }
+
+      const data: AuditResult = parsed;
       const id = Date.now();
       const savedReport: SavedAuditReport = { ...data, id, url: trimmedUrl };
 
@@ -82,7 +107,11 @@ export default function Home() {
       setResult(savedReport);
     } catch {
       setResult(null);
-      setError("Failed to run audit. Please try again.");
+      setNotice({
+        tone: "error",
+        title: "Network error",
+        message: "Failed to run audit. Check your connection and try again.",
+      });
     } finally {
       setLoading(false);
     }
@@ -103,7 +132,12 @@ export default function Home() {
         <div className="max-w-xl mx-auto bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
           <input
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e) => {
+              setUrl(e.target.value);
+              if (notice) {
+                setNotice(null);
+              }
+            }}
             placeholder="https://example.com"
             className="w-full border p-3 rounded mb-4"
           />
@@ -116,10 +150,21 @@ export default function Home() {
             {loading ? "Analyzing..." : "Run Audit"}
           </button>
 
-          {error && (
-            <p className="mt-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </p>
+          <p className="mt-3 text-xs text-gray-500">
+            Use a public page URL. Some sites may block automated access or time out.
+          </p>
+
+          {notice && (
+            <div
+              className={`mt-4 rounded border px-3 py-3 text-sm ${
+                notice.tone === "warning"
+                  ? "border-amber-200 bg-amber-50 text-amber-800"
+                  : "border-red-200 bg-red-50 text-red-700"
+              }`}
+            >
+              <p className="font-semibold">{notice.title}</p>
+              <p className="mt-1">{notice.message}</p>
+            </div>
           )}
         </div>
       </section>
@@ -189,6 +234,22 @@ export default function Home() {
 
     </div>
   );
+}
+
+function getErrorTitle(status: number) {
+  if (status === 400) {
+    return "Invalid request";
+  }
+
+  if (status === 403) {
+    return "Access blocked";
+  }
+
+  if (status === 504) {
+    return "Request timed out";
+  }
+
+  return "Audit failed";
 }
 
 function Feature({ title, desc }: { title: string; desc: string }) {

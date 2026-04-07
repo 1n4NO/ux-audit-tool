@@ -1,6 +1,6 @@
 "use client";
 
-import { SavedAuditHistoryItem } from "@/app/types/audit";
+import { isSavedAuditHistoryItem, SavedAuditHistoryItem } from "@/app/types/audit";
 import { useState, useSyncExternalStore } from "react";
 
 function subscribeToBrowserState() {
@@ -19,7 +19,10 @@ export default function History() {
 
   if (isClient) {
     try {
-      reports = JSON.parse(localStorage.getItem("reports") || "[]") as SavedAuditHistoryItem[];
+      const parsed = JSON.parse(localStorage.getItem("reports") || "[]") as unknown;
+      reports = Array.isArray(parsed)
+        ? parsed.filter(isSavedAuditHistoryItem)
+        : [];
     } catch {
       reports = [];
     }
