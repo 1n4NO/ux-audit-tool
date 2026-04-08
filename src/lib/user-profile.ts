@@ -1,6 +1,7 @@
 import { UserProfile } from "@/app/types/user";
 import { User } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "./supabase/server";
+import { getCurrentWorkspaceForUser } from "./workspaces";
 
 type ProfileRow = {
   id: string;
@@ -82,9 +83,11 @@ export async function getCurrentUserContext() {
   }
 
   const profile = await syncUserProfile(user);
+  const workspace = await getCurrentWorkspaceForUser(user);
 
   return {
     user,
     profile,
+    workspace,
   };
 }

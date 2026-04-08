@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 
 export default async function AccountPage() {
-  const { user, profile } = await requireUser("/login?next=/account");
+  const { user, profile, workspace } = await requireUser("/login?next=/account");
 
   return (
     <Box sx={{ display: "grid", gap: 3, maxWidth: 760 }}>
@@ -40,6 +40,12 @@ export default async function AccountPage() {
         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}>
           <Chip label="Authenticated" color="success" variant="outlined" />
           <Chip label="Reports enabled" variant="outlined" />
+          {workspace && (
+            <Chip
+              label={workspace.personal ? "Personal workspace" : "Team workspace"}
+              variant="outlined"
+            />
+          )}
         </Box>
 
         <Box sx={{ display: "grid", gap: 1.25 }}>
@@ -55,6 +61,12 @@ export default async function AccountPage() {
             {profile?.lastSignedInAt
               ? new Date(profile.lastSignedInAt).toLocaleString()
               : "Not available"}
+          </Typography>
+          <Typography variant="body2">
+            <strong>Workspace:</strong> {workspace?.name ?? "Not available"}
+          </Typography>
+          <Typography variant="body2">
+            <strong>Workspace slug:</strong> {workspace?.slug ?? "Not available"}
           </Typography>
         </Box>
       </Paper>

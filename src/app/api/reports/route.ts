@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/supabase/config";
 import { buildInsertPayload, mapRecordToHistoryItem, mapRecordToSavedReport } from "@/lib/reports";
+import { getCurrentWorkspaceForUser } from "@/lib/workspaces";
 
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === "string");
@@ -34,11 +35,18 @@ export async function GET() {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
+  const workspace = await getCurrentWorkspaceForUser(user);
+
+  if (!workspace) {
+    return NextResponse.json({ error: "Workspace not available" }, { status: 500 });
+  }
+
   const { data, error } = await supabase
     .from("reports")
     .select(
       "id, created_at, url, page_title, selected_checks, overall_score, accessibility_score, readability_score, performance_score, issues"
     )
+    .eq("workspace_id", workspace.id)
     .order("created_at", { ascending: false })
     .limit(10);
 
@@ -70,6 +78,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
+  const workspace = await getCurrentWorkspaceForUser(user);
+
+  if (!workspace) {
+    return NextResponse.json({ error: "Workspace not available" }, { status: 500 });
+  }
+
   const body = (await request.json()) as {
     url?: unknown;
     result?: unknown;
@@ -96,6 +110,7 @@ export async function POST(request: NextRequest) {
     result: body.result,
     selectedChecks: body.selectedChecks,
     userId: user.id,
+    workspaceId: workspace.id,
   });
 
   const { data, error } = await supabase
@@ -130,7 +145,16 @@ export async function DELETE() {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  const { error } = await supabase.from("reports").delete().eq("user_id", user.id);
+  const workspace = await getCurrentWorkspaceForUser(user);
+
+  if (!workspace) {
+    return NextResponse.json({ error: "Workspace not available" }, { status: 500 });
+  }
+
+  const { error } = await supabase
+    .from("reports")
+    .delete()
+    .eq("workspace_id", workspace.id);
 
   if (error) {
     return NextResponse.json(

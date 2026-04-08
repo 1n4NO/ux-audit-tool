@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/supabase/config";
 import { syncUserProfile } from "@/lib/user-profile";
+import { ensurePersonalWorkspace } from "@/lib/workspaces";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -17,6 +18,7 @@ export async function GET(request: NextRequest) {
     const { data } = await supabase.auth.exchangeCodeForSession(code);
     if (data.user) {
       await syncUserProfile(data.user);
+      await ensurePersonalWorkspace(data.user);
     }
   }
 

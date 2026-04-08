@@ -12,14 +12,17 @@ export function buildInsertPayload({
   result,
   selectedChecks,
   userId,
+  workspaceId,
 }: {
   url: string;
   result: AuditResult;
   selectedChecks: string[];
   userId: string;
+  workspaceId: string;
 }) {
   return {
     user_id: userId,
+    workspace_id: workspaceId,
     url,
     page_title: result.pageTitle,
     selected_checks: selectedChecks,
