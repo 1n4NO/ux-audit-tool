@@ -1,9 +1,11 @@
 "use client";
 
 import {
+  Alert,
   Box,
   Button,
   Chip,
+  CircularProgress,
   Paper,
   Typography,
   useTheme,
@@ -11,34 +13,62 @@ import {
 import { getAuditCheckLabel } from "@/lib/audit/checks";
 import { isSavedAuditHistoryItem, SavedAuditHistoryItem } from "@/app/types/audit";
 import Link from "next/link";
-import { useState, useSyncExternalStore } from "react";
-
-function subscribeToBrowserState() {
-  return () => {};
-}
+import { useEffect, useState } from "react";
 
 export default function History() {
-  const isClient = useSyncExternalStore(
-    subscribeToBrowserState,
-    () => true,
-    () => false
-  );
-  const [, setRefreshTick] = useState(0);
+  const [reports, setReports] = useState<SavedAuditHistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  let reports: SavedAuditHistoryItem[] = [];
+  useEffect(() => {
+    let active = true;
 
-  if (isClient) {
-    try {
-      const parsed = JSON.parse(localStorage.getItem("reports") || "[]") as unknown;
-      reports = Array.isArray(parsed)
-        ? parsed.filter(isSavedAuditHistoryItem)
-        : [];
-    } catch {
-      reports = [];
-    }
-  }
+    void (async () => {
+      try {
+        const response = await fetch("/api/reports", {
+          method: "GET",
+          cache: "no-store",
+        });
 
-  if (!isClient) return null;
+        if (response.status === 401) {
+          if (active) {
+            setError("Sign in to view your saved report history.");
+            setReports([]);
+          }
+          return;
+        }
+
+        if (!response.ok) {
+          if (active) {
+            setError("Failed to load report history.");
+          }
+          return;
+        }
+
+        const payload = (await response.json()) as { reports?: unknown };
+        const parsedReports = Array.isArray(payload.reports)
+          ? payload.reports.filter(isSavedAuditHistoryItem)
+          : [];
+
+        if (active) {
+          setReports(parsedReports);
+          setError(null);
+        }
+      } catch {
+        if (active) {
+          setError("Failed to load report history.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <Box sx={{ mt: 5 }}>
@@ -56,9 +86,16 @@ export default function History() {
         </Typography>
         {reports.length > 0 && (
           <Button
-            onClick={() => {
-              localStorage.removeItem("reports");
-              setRefreshTick((tick) => tick + 1);
+            onClick={async () => {
+              const response = await fetch("/api/reports", { method: "DELETE" });
+              if (response.ok) {
+                setReports([]);
+                setError(null);
+              } else if (response.status === 401) {
+                setError("Sign in to manage saved report history.");
+              } else {
+                setError("Failed to clear report history.");
+              }
             }}
             color="error"
             size="small"
@@ -68,9 +105,18 @@ export default function History() {
         )}
       </Box>
 
-      {reports.length === 0 ? (
+      {loading ? (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, color: "text.secondary" }}>
+          <CircularProgress size={18} />
+          <Typography variant="body2">Loading saved reports...</Typography>
+        </Box>
+      ) : error ? (
+        <Alert severity="info" variant="outlined">
+          {error}
+        </Alert>
+      ) : reports.length === 0 ? (
         <Typography variant="body2" color="text.secondary">
-          No recent audits yet.
+          No saved audits yet.
         </Typography>
       ) : (
         <Box

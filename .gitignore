@@ -23,6 +23,9 @@
 # misc
 .DS_Store
 *.pem
+.local/
+.cache/
+.eslintcache
 
 # debug
 npm-debug.log*
@@ -35,6 +38,10 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# supabase local state
+.supabase/
+supabase/.temp/
 
 # typescript
 *.tsbuildinfo

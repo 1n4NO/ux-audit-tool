@@ -15,43 +15,69 @@ import {
   Typography,
 } from "@mui/material";
 import { useParams, useRouter } from "next/navigation";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import IssuesList from "@/app/components/IssuesList";
 import ScoreCards from "@/app/components/ScoreCards";
-
-function subscribeToBrowserState() {
-  return () => {};
-}
 
 export default function ReportPage() {
   const { id } = useParams();
   const router = useRouter();
-  const isClient = useSyncExternalStore(
-    subscribeToBrowserState,
-    () => true,
-    () => false
-  );
   const reportId = Array.isArray(id) ? id[0] : id;
   const [feedback, setFeedback] = useState<string | null>(null);
-  const data = useMemo<SavedAuditReport | null>(() => {
-    if (!isClient || !reportId) {
-      return null;
+  const [data, setData] = useState<SavedAuditReport | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [missing, setMissing] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    if (!reportId) {
+      setLoading(false);
+      setMissing(true);
+      return () => {
+        active = false;
+      };
     }
 
-    try {
-      const saved = localStorage.getItem(`report-${reportId}`);
-      if (!saved) {
-        return null;
+    void (async () => {
+      try {
+        const response = await fetch(`/api/reports/${reportId}`, {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          if (active) {
+            setMissing(true);
+          }
+          return;
+        }
+
+        const payload = (await response.json()) as { report?: unknown };
+
+        if (active && payload.report && isSavedAuditReport(payload.report)) {
+          setData(payload.report);
+          setMissing(false);
+        } else if (active) {
+          setMissing(true);
+        }
+      } catch {
+        if (active) {
+          setMissing(true);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
+    })();
 
-      const parsed = JSON.parse(saved) as unknown;
-      return isSavedAuditReport(parsed) ? parsed : null;
-    } catch {
-      return null;
-    }
-  }, [isClient, reportId]);
+    return () => {
+      active = false;
+    };
+  }, [reportId]);
 
-  if (!isClient) {
+  if (loading) {
     return (
       <Typography variant="body2" color="text.secondary">
         Loading report...
@@ -59,7 +85,7 @@ export default function ReportPage() {
     );
   }
 
-  if (!reportId || !data) {
+  if (!reportId || !data || missing) {
     return (
       <Box sx={{ display: "grid", gap: 3, maxWidth: 720 }}>
         <Button
@@ -77,7 +103,7 @@ export default function ReportPage() {
             Report not found
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            This report is missing, invalid, or unavailable in this browser.
+            This report is missing, invalid, or unavailable for your account.
           </Typography>
         </Paper>
       </Box>
@@ -204,7 +230,10 @@ export default function ReportPage() {
 
 function getReportFilename(report: SavedAuditReport) {
   const hostname = getHostname(report.url);
-  const timestamp = new Date(report.id).toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  const timestamp = new Date(report.createdAt)
+    .toISOString()
+    .slice(0, 19)
+    .replace(/[:T]/g, "-");
   return `ux-audit-${hostname}-${timestamp}.json`;
 }
 

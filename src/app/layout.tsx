@@ -1,4 +1,5 @@
 import AppThemeProvider from "./components/AppThemeProvider";
+import AuthStatus from "./components/AuthStatus";
 import ThemeToggle from "./components/ThemeToggle";
 import "./globals.css";
 import InitColorSchemeScript from "@mui/material/InitColorSchemeScript";
@@ -10,12 +11,25 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
+import { hasSupabaseEnv } from "@/lib/supabase/config";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const authEnabled = hasSupabaseEnv();
+  let initialUserEmail: string | null = null;
+
+  if (authEnabled) {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    initialUserEmail = user?.email ?? null;
+  }
+
   return (
     <html
       lang="en"
@@ -59,6 +73,10 @@ export default function RootLayout({
                   <Link href="/#features" style={{ color: "inherit", textDecoration: "none" }}>
                     <Box sx={{ typography: "body2" }}>Features</Box>
                   </Link>
+                  <AuthStatus
+                    authEnabled={authEnabled}
+                    initialUserEmail={initialUserEmail}
+                  />
                   <ThemeToggle />
                 </Box>
               </Toolbar>

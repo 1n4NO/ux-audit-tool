@@ -4,8 +4,7 @@ import {
   AuditErrorResponse,
   AuditResult,
   isAuditResult,
-  SavedAuditHistoryItem,
-  SavedAuditReport,
+  isSavedAuditReport,
 } from "@/app/types/audit";
 import {
   AUDIT_CHECKS,
@@ -43,6 +42,12 @@ type AuditNotice = {
 type AuditProgressState = {
   label: string;
   value: number;
+};
+
+type HomeAuditResult = AuditResult & {
+  url: string;
+  selectedChecks: string[];
+  savedReportId?: string;
 };
 
 const AUDIT_CHECK_PREFERENCES_KEY = "audit-check-preferences";
@@ -108,7 +113,7 @@ function isValidAuditUrl(value: string) {
 export default function Home() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<SavedAuditReport | null>(null);
+  const [result, setResult] = useState<HomeAuditResult | null>(null);
   const [notice, setNotice] = useState<AuditNotice | null>(null);
   const [selectedChecks, setSelectedChecks] = useState<string[]>(getStoredAuditChecks);
   const [progress, setProgress] = useState<AuditProgressState | null>(null);
@@ -175,34 +180,58 @@ export default function Home() {
       }
 
       const data: AuditResult = parsed;
-      setProgress({ label: "Saving report locally", value: 96 });
-      const id = Date.now();
-      const savedReport: SavedAuditReport = {
+      const previewResult: HomeAuditResult = {
         ...data,
-        id,
         url: trimmedUrl,
         selectedChecks,
       };
 
-      localStorage.setItem(`report-${id}`, JSON.stringify(savedReport));
+      setProgress({ label: "Saving report", value: 96 });
 
-      const newReport: SavedAuditHistoryItem = {
-        id,
-        url: trimmedUrl,
-        result: data,
-        selectedChecks,
-      };
+      const saveResponse = await fetch("/api/reports", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: trimmedUrl,
+          result: data,
+          selectedChecks,
+        }),
+      });
 
-      const existing = JSON.parse(
-        localStorage.getItem("reports") || "[]"
-      ) as SavedAuditHistoryItem[];
+      if (saveResponse.ok) {
+        const saved = (await saveResponse.json()) as {
+          report?: unknown;
+        };
 
-      localStorage.setItem(
-        "reports",
-        JSON.stringify([newReport, ...existing].slice(0, 10))
-      );
+        if (saved.report && isSavedAuditReport(saved.report)) {
+          setResult({
+            ...previewResult,
+            savedReportId: saved.report.id,
+          });
+          setProgress({ label: "Audit complete", value: 100 });
+          return;
+        }
+      }
 
-      setResult(savedReport);
+      if (saveResponse.status === 401) {
+        setNotice({
+          tone: "warning",
+          title: "Sign in to save reports",
+          message:
+            "The audit completed, but saving is limited to signed-in users. Sign in to keep report history in Supabase.",
+        });
+      } else if (saveResponse.status !== 201) {
+        setNotice({
+          tone: "warning",
+          title: "Report not saved",
+          message:
+            "The audit completed, but the report could not be saved to Supabase. Review the result below and try again.",
+        });
+      }
+
+      setResult(previewResult);
       setProgress({ label: "Audit complete", value: 100 });
     } catch {
       setResult(null);
@@ -487,14 +516,20 @@ export default function Home() {
           <Alert severity="success" sx={{ mt: 3 }}>
             <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
               <Typography variant="body2" fontWeight={600}>
-                Report saved.
+                {result.savedReportId ? "Report saved." : "Audit complete."}
               </Typography>
-              <Link
-                href={`/report/${result.id}`}
-                style={{ textDecoration: "underline", color: "inherit" }}
-              >
-                View Report
-              </Link>
+              {result.savedReportId ? (
+                <Link
+                  href={`/report/${result.savedReportId}`}
+                  style={{ textDecoration: "underline", color: "inherit" }}
+                >
+                  View Report
+                </Link>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  Sign in to save this report to your history.
+                </Typography>
+              )}
             </Box>
           </Alert>
         </Box>
