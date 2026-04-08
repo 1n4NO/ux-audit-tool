@@ -2,7 +2,11 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasSupabaseEnv } from "./config";
 
-export function updateSupabaseSession(request: NextRequest) {
+function isProtectedPath(pathname: string) {
+  return pathname.startsWith("/account") || pathname.startsWith("/report/");
+}
+
+export async function updateSupabaseSession(request: NextRequest) {
   if (!hasSupabaseEnv()) {
     return NextResponse.next({ request });
   }
@@ -29,7 +33,25 @@ export function updateSupabaseSession(request: NextRequest) {
     }
   );
 
-  void supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { pathname } = request.nextUrl;
+
+  if (!user && isProtectedPath(pathname)) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (user && pathname === "/login") {
+    const appUrl = request.nextUrl.clone();
+    appUrl.pathname = "/";
+    appUrl.searchParams.delete("next");
+    return NextResponse.redirect(appUrl);
+  }
 
   return response;
 }

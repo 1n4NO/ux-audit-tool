@@ -13,10 +13,12 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const authEnabled = hasSupabaseEnv();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{
@@ -61,10 +63,11 @@ export default function LoginPage() {
             setStatus(null);
 
             const origin = window.location.origin;
+            const nextPath = searchParams.get("next") || "/";
             const { error } = await supabase.auth.signInWithOtp({
               email: email.trim(),
               options: {
-                emailRedirectTo: `${origin}/auth/callback?next=/`,
+                emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
               },
             });
 

@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { hasSupabaseEnv } from "@/lib/supabase/config";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCurrentUserContext } from "@/lib/user-profile";
 
 export default async function RootLayout({
   children,
@@ -21,13 +21,12 @@ export default async function RootLayout({
 }) {
   const authEnabled = hasSupabaseEnv();
   let initialUserEmail: string | null = null;
+  let initialDisplayName: string | null = null;
 
   if (authEnabled) {
-    const supabase = await createSupabaseServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user, profile } = await getCurrentUserContext();
     initialUserEmail = user?.email ?? null;
+    initialDisplayName = profile?.displayName ?? null;
   }
 
   return (
@@ -76,6 +75,7 @@ export default async function RootLayout({
                   <AuthStatus
                     authEnabled={authEnabled}
                     initialUserEmail={initialUserEmail}
+                    initialDisplayName={initialDisplayName}
                   />
                   <ThemeToggle />
                 </Box>

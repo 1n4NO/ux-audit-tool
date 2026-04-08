@@ -461,7 +461,7 @@ export default function Home() {
       </Box>
 
       <Box component="section" id="features">
-        <Typography variant="h4" textAlign="center" sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ mb: 4, textAlign: "center" }}>
           Features
         </Typography>
         <Box
@@ -484,7 +484,7 @@ export default function Home() {
       </Box>
 
       <Paper component="section" variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
-        <Typography variant="h4" textAlign="center" sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ mb: 4, textAlign: "center" }}>
           How It Works
         </Typography>
 
@@ -587,7 +587,7 @@ function Feature({ title, desc }: { title: string; desc: string }) {
 
 function Step({ title, desc }: { title: string; desc: string }) {
   return (
-    <Box textAlign="center">
+    <Box sx={{ textAlign: "center" }}>
       <Typography variant="h6" sx={{ mb: 1 }}>
         {title}
       </Typography>

@@ -186,7 +186,7 @@ function HistoryCard({ report }: { report: SavedAuditHistoryItem }) {
           <MiniDial label="Read" value={report.result.categories.readability} />
           <MiniDial label="Perf" value={report.result.categories.performance} />
           </Box>
-          <Typography variant="caption" color="text.secondary" textAlign="right">
+          <Typography variant="caption" color="text.secondary" sx={{ textAlign: "right" }}>
             {report.result.issues.length} issue{report.result.issues.length === 1 ? "" : "s"}
           </Typography>
         </Box>

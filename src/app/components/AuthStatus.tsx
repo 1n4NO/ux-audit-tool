@@ -17,15 +17,18 @@ import { useEffect, useMemo, useState } from "react";
 type AuthStatusProps = {
   authEnabled: boolean;
   initialUserEmail: string | null;
+  initialDisplayName?: string | null;
 };
 
 export default function AuthStatus({
   authEnabled,
   initialUserEmail,
+  initialDisplayName,
 }: AuthStatusProps) {
   const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [userEmail, setUserEmail] = useState(initialUserEmail);
+  const [displayName, setDisplayName] = useState(initialDisplayName ?? null);
   const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
@@ -35,11 +38,25 @@ export default function AuthStatus({
 
     const authListener = supabase.auth.onAuthStateChange((_event, session) => {
       setUserEmail(session?.user.email ?? null);
+      setDisplayName(
+        typeof session?.user.user_metadata?.full_name === "string"
+          ? session.user.user_metadata.full_name
+          : typeof session?.user.user_metadata?.name === "string"
+            ? session.user.user_metadata.name
+            : null
+      );
       router.refresh();
     });
 
     void supabase.auth.getUser().then(({ data }) => {
       setUserEmail(data.user?.email ?? null);
+      setDisplayName(
+        typeof data.user?.user_metadata?.full_name === "string"
+          ? data.user.user_metadata.full_name
+          : typeof data.user?.user_metadata?.name === "string"
+            ? data.user.user_metadata.name
+            : null
+      );
     });
 
     return () => {
@@ -77,7 +94,10 @@ export default function AuthStatus({
     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
       <Chip
         icon={<PersonRoundedIcon />}
-        label={userEmail}
+        component={Link}
+        clickable
+        href="/account"
+        label={displayName ?? userEmail}
         variant="outlined"
         sx={{ maxWidth: 220 }}
       />
